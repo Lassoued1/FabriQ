@@ -7,33 +7,32 @@ async function login(page: Page) {
   await page.goto('/')
   await page.getByLabel(/email/i).fill(ADMIN_EMAIL)
   await page.getByLabel(/mot de passe/i).fill(ADMIN_PASSWORD)
-  await page.getByRole('button', { name: /connexion/i }).click()
-  await page.getByPlaceholder(/question|analyse/i).waitFor({ timeout: 10_000 })
+  await page.getByRole('button', { name: /se connecter/i }).click()
+  await page.getByLabel(/question en langage naturel/i).waitFor({ timeout: 10_000 })
 }
 
 test.describe('Analysis (ask)', () => {
   test('example questions are displayed', async ({ page }) => {
     await login(page)
     // At least one example question should be visible on load
-    const examples = page.locator('button[class*="example"]')
+    const examples = page.locator('.examples-list button')
     await expect(examples.first()).toBeVisible({ timeout: 5_000 })
   })
 
   test('submit a question and receive a response', async ({ page }) => {
     await login(page)
-    const input = page.getByPlaceholder(/question|analyse/i)
-    await input.fill('Quelle est la tendance de marge ?')
-    await page.getByRole('button', { name: /analyser|envoyer/i }).click()
-    // Result table or chart should appear
-    await expect(page.locator('[class*="result"], table, [class*="chart"]').first()).toBeVisible({ timeout: 20_000 })
+    const input = page.getByLabel(/question en langage naturel/i)
+    await input.fill('Quels fournisseurs ont ete le plus souvent en retard ?')
+    await page.getByRole('button', { name: /analyser/i }).click()
+    // The SQL panel of the response should appear
+    await expect(page.locator('.sql-block pre')).toBeVisible({ timeout: 20_000 })
   })
 
-  test('clicking an example populates the input', async ({ page }) => {
+  test('clicking an example runs the analysis', async ({ page }) => {
     await login(page)
-    const firstExample = page.locator('button[class*="example"]').first()
-    const exampleText = await firstExample.textContent()
+    const firstExample = page.locator('.examples-list button').first()
     await firstExample.click()
-    const input = page.getByPlaceholder(/question|analyse/i)
-    await expect(input).toHaveValue(exampleText?.trim() ?? '')
+    // Clicking an example triggers the analysis directly
+    await expect(page.locator('.analysis-grid')).toBeVisible({ timeout: 20_000 })
   })
 })
