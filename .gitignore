@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Local runtime artifacts
+tmp/
+output/
+backend/logs/
+backend/reports/
+backend/data/
+*.log
+
+# Tooling
+.claude/
+.agents/
+
+# Environment
+.env
+.env.local

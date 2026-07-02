@@ -1,0 +1,57 @@
+{
+  "title": "FabriQ API",
+  "uid": "fabriq-api",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Requêtes/sec",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(http_requests_total{job=\"fabriq-api\"}[1m])",
+          "legendFormat": "{{method}} {{handler}} {{status_code}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Latence P95 (ms)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"fabriq-api\"}[5m])) * 1000",
+          "legendFormat": "P95 {{handler}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Taux d'erreurs 5xx",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{job=\"fabriq-api\",status_code=~\"5..\"}[5m]))",
+          "legendFormat": "5xx/s"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Requêtes /api/ask (total)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(http_requests_total{job=\"fabriq-api\",handler=\"/api/ask\"})",
+          "legendFormat": "Total asks"
+        }
+      ]
+    }
+  ]
+}

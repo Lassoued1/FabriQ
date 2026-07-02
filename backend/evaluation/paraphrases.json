@@ -1,0 +1,82 @@
+[
+  {
+    "id": "margin_trend",
+    "question": "Quels articles perdent en rentabilite depuis le dernier trimestre ?",
+    "expected_intent": "margin_trend",
+    "expected_chart_type": "line",
+    "required_columns": ["mois", "produit", "marge", "taux_marge"],
+    "min_rows": 1
+  },
+  {
+    "id": "stockout_risk",
+    "question": "Quels produits risquent de manquer de stock dans les prochains jours ?",
+    "expected_intent": "stockout_risk",
+    "expected_chart_type": "bar",
+    "required_columns": ["produit", "categorie", "stock_actuel", "stock_securite", "jours_couverture"],
+    "min_rows": 1
+  },
+  {
+    "id": "supplier_delays",
+    "question": "Quels fournisseurs ont les delais de livraison les moins fiables ?",
+    "expected_intent": "supplier_delays",
+    "expected_chart_type": "bar",
+    "required_columns": ["fournisseur", "livraisons", "retard_moyen_jours", "livraisons_en_retard"],
+    "min_rows": 1
+  },
+  {
+    "id": "production_efficiency",
+    "question": "Quels ateliers generent le plus de rebuts en production ?",
+    "expected_intent": "production_efficiency",
+    "expected_chart_type": "bar",
+    "required_columns": ["ligne", "volume_produit", "defauts", "taux_defaut"],
+    "min_rows": 1
+  },
+  {
+    "id": "revenue_trend",
+    "question": "Comment evoluent les ventes mensuelles par famille produit ?",
+    "expected_intent": "revenue_trend",
+    "expected_chart_type": "line",
+    "required_columns": ["mois", "categorie", "chiffre_affaires"],
+    "min_rows": 1
+  },
+  {
+    "id": "stock_ageing",
+    "question": "Quels stocks dormants n'ont pas bouge depuis longtemps ?",
+    "expected_intent": "stock_ageing",
+    "expected_chart_type": "bar",
+    "required_columns": ["produit", "categorie", "stock_actuel", "dernier_mouvement", "jours_sans_mouvement"],
+    "min_rows": 1
+  },
+  {
+    "id": "logistics_cost",
+    "question": "Quelles expeditions coutent le plus cher par route ?",
+    "expected_intent": "logistics_cost",
+    "expected_chart_type": "bar",
+    "required_columns": ["route", "transporteur", "cout_moyen", "cout_total", "retard_moyen_jours"],
+    "min_rows": 1
+  },
+  {
+    "id": "returns_rate",
+    "question": "Quels articles generent le plus de reclamations et retours ?",
+    "expected_intent": "returns_rate",
+    "expected_chart_type": "bar",
+    "required_columns": ["produit", "categorie", "quantite_retournee", "retours", "motifs"],
+    "min_rows": 1
+  },
+  {
+    "id": "customer_concentration",
+    "question": "Quels gros clients concentrent le chiffre d'affaires ?",
+    "expected_intent": "customer_concentration",
+    "expected_chart_type": "bar",
+    "required_columns": ["client", "chiffre_affaires", "part_ca"],
+    "min_rows": 1
+  },
+  {
+    "id": "anomaly_detection",
+    "question": "Quels produits ont une variation inhabituelle le dernier mois ?",
+    "expected_intent": "anomaly_detection",
+    "expected_chart_type": "bar",
+    "required_columns": ["produit", "ca_dernier_mois", "ca_moyen_commande", "ecart"],
+    "min_rows": 1
+  }
+]
