@@ -666,6 +666,7 @@ function App() {
   }
 
   return (
+    <>
     <main className="app-shell">
       <header className="topbar">
         <div className="brand-lockup">
@@ -897,6 +898,7 @@ function App() {
     </main>
 
     <ToastContainer toasts={toasts} onDismiss={dismiss} />
+    </>
   )
 }
 

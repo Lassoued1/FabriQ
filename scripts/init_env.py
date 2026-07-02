@@ -16,9 +16,9 @@ import sys
 
 def main() -> None:
     try:
-        from passlib.context import CryptContext
+        import bcrypt
     except ImportError:
-        print("passlib not installed. Run: pip install passlib[bcrypt]")
+        print("bcrypt not installed. Run: pip install bcrypt")
         sys.exit(1)
 
     print("=== FabriQ — initialisation de l'environnement ===\n")
@@ -31,8 +31,7 @@ def main() -> None:
     tenant_id = input("Tenant ID [tenant_demo]: ").strip() or "tenant_demo"
     role = input("Rôle (admin/viewer) [admin]: ").strip() or "admin"
 
-    pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    hashed = pwd_ctx.hash(password)
+    hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(rounds=12)).decode("utf-8")
     jwt_secret = secrets.token_hex(32)
 
     db_password = input("\nMot de passe DB read-only [fabriq_readonly]: ").strip() or "fabriq_readonly"

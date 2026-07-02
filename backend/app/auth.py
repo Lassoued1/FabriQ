@@ -4,12 +4,11 @@ import os
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
+import bcrypt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
-_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 _oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 _ALGORITHM = "HS256"
@@ -68,11 +67,15 @@ def load_users_from_env() -> dict[str, _UserRecord]:
 
 
 def hash_password(plain: str) -> str:
-    return _pwd_context.hash(plain)
+    return bcrypt.hashpw(plain.encode("utf-8"), bcrypt.gensalt(rounds=12)).decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return _pwd_context.verify(plain, hashed)
+    try:
+        return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
+    except ValueError:
+        # Hash malforme (ex. placeholder) -> refus, pas d'erreur 500
+        return False
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
