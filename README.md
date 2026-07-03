@@ -1,8 +1,12 @@
 # FabriQ
 
+[![CI](https://github.com/Lassoued1/FabriQ/actions/workflows/ci.yml/badge.svg)](https://github.com/Lassoued1/FabriQ/actions/workflows/ci.yml)
+
 FabriQ est un assistant d'analyse pour PME industrielles: une question en langage naturel, une requete SQL sure, une execution en lecture seule, puis une reponse lisible avec tableau, graphique, SQL visible et explication operationnelle.
 
 **Version courante: v0.10.0** — multi-utilisateurs, multi-tenant, orchestration LangGraph, alertes planifiees, observabilite Prometheus/Grafana, CI et tests E2E.
+
+![Demo FabriQ](docs/assets/fabriq-v0.10.0-demo.gif)
 
 ## Probleme
 
