@@ -16,6 +16,7 @@ from .semantic_layer import (
     EXAMPLE_QUESTIONS,
     INTENTS,
     intent_by_id,
+    is_write_request,
     rank_intent_candidates,
     select_intent_match,
 )
@@ -101,6 +102,10 @@ def route_intent_node(state: FabriqState) -> dict:
 def _after_route_intent(state: FabriqState) -> str:
     if state.get("intent") is not None:
         return "generate_sql"
+    # Une demande d'ecriture ne doit jamais atteindre le routeur LLM :
+    # clarification directe, sans analyse.
+    if is_write_request(state["question"]):
+        return "clarify"
     llm_settings = state.get("llm_settings")
     if llm_settings and getattr(llm_settings, "enabled", False):
         return "llm_route"

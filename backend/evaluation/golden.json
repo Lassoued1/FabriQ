@@ -4,7 +4,12 @@
     "question": "Quels produits ont vu leur marge baisser le trimestre dernier ?",
     "expected_intent": "margin_trend",
     "expected_chart_type": "line",
-    "required_columns": ["mois", "produit", "marge", "taux_marge"],
+    "required_columns": [
+      "mois",
+      "produit",
+      "marge",
+      "taux_marge"
+    ],
     "min_rows": 1
   },
   {
@@ -12,7 +17,13 @@
     "question": "Quels SKU risquent une rupture dans les 14 prochains jours ?",
     "expected_intent": "stockout_risk",
     "expected_chart_type": "bar",
-    "required_columns": ["produit", "categorie", "stock_actuel", "stock_securite", "jours_couverture"],
+    "required_columns": [
+      "produit",
+      "categorie",
+      "stock_actuel",
+      "stock_securite",
+      "jours_couverture"
+    ],
     "min_rows": 1
   },
   {
@@ -20,7 +31,12 @@
     "question": "Quels fournisseurs ont ete le plus souvent en retard ?",
     "expected_intent": "supplier_delays",
     "expected_chart_type": "bar",
-    "required_columns": ["fournisseur", "livraisons", "retard_moyen_jours", "livraisons_en_retard"],
+    "required_columns": [
+      "fournisseur",
+      "livraisons",
+      "retard_moyen_jours",
+      "livraisons_en_retard"
+    ],
     "min_rows": 1
   },
   {
@@ -28,7 +44,12 @@
     "question": "Quelles lignes de production ont eu le plus de defauts ?",
     "expected_intent": "production_efficiency",
     "expected_chart_type": "bar",
-    "required_columns": ["ligne", "volume_produit", "defauts", "taux_defaut"],
+    "required_columns": [
+      "ligne",
+      "volume_produit",
+      "defauts",
+      "taux_defaut"
+    ],
     "min_rows": 1
   },
   {
@@ -36,7 +57,11 @@
     "question": "Montre le chiffre d'affaires mensuel par categorie.",
     "expected_intent": "revenue_trend",
     "expected_chart_type": "line",
-    "required_columns": ["mois", "categorie", "chiffre_affaires"],
+    "required_columns": [
+      "mois",
+      "categorie",
+      "chiffre_affaires"
+    ],
     "min_rows": 1
   },
   {
@@ -44,7 +69,13 @@
     "question": "Quels produits sont restes trop longtemps en stock ?",
     "expected_intent": "stock_ageing",
     "expected_chart_type": "bar",
-    "required_columns": ["produit", "categorie", "stock_actuel", "dernier_mouvement", "jours_sans_mouvement"],
+    "required_columns": [
+      "produit",
+      "categorie",
+      "stock_actuel",
+      "dernier_mouvement",
+      "jours_sans_mouvement"
+    ],
     "min_rows": 1
   },
   {
@@ -52,7 +83,13 @@
     "question": "Quelles routes sont devenues plus cheres ?",
     "expected_intent": "logistics_cost",
     "expected_chart_type": "bar",
-    "required_columns": ["route", "transporteur", "cout_moyen", "cout_total", "retard_moyen_jours"],
+    "required_columns": [
+      "route",
+      "transporteur",
+      "cout_moyen",
+      "cout_total",
+      "retard_moyen_jours"
+    ],
     "min_rows": 1
   },
   {
@@ -60,7 +97,13 @@
     "question": "Quels produits ont le taux de retour le plus eleve ?",
     "expected_intent": "returns_rate",
     "expected_chart_type": "bar",
-    "required_columns": ["produit", "categorie", "quantite_retournee", "retours", "motifs"],
+    "required_columns": [
+      "produit",
+      "categorie",
+      "quantite_retournee",
+      "retours",
+      "motifs"
+    ],
     "min_rows": 1
   },
   {
@@ -68,7 +111,11 @@
     "question": "Quels clients representent l'essentiel du CA ?",
     "expected_intent": "customer_concentration",
     "expected_chart_type": "bar",
-    "required_columns": ["client", "chiffre_affaires", "part_ca"],
+    "required_columns": [
+      "client",
+      "chiffre_affaires",
+      "part_ca"
+    ],
     "min_rows": 1
   },
   {
@@ -76,7 +123,326 @@
     "question": "Qu'est-ce qui a change anormalement le mois dernier ?",
     "expected_intent": "anomaly_detection",
     "expected_chart_type": "bar",
-    "required_columns": ["produit", "ca_dernier_mois", "ca_moyen_commande", "ecart"],
+    "required_columns": [
+      "produit",
+      "ca_dernier_mois",
+      "ca_moyen_commande",
+      "ecart"
+    ],
     "min_rows": 1
+  },
+  {
+    "id": "margin_trend_v2",
+    "question": "La rentabilite de nos produits se degrade-t-elle ce trimestre ?",
+    "expected_intent": "margin_trend",
+    "expected_chart_type": "line",
+    "required_columns": [
+      "mois",
+      "produit",
+      "marge",
+      "taux_marge"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "margin_trend_v3",
+    "question": "Sur quels articles la marge est en baisse recemment ?",
+    "expected_intent": "margin_trend",
+    "expected_chart_type": "line",
+    "required_columns": [
+      "mois",
+      "produit",
+      "marge",
+      "taux_marge"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "stockout_risk_v2",
+    "question": "Quels produits risquent une penurie de stock prochainement ?",
+    "expected_intent": "stockout_risk",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "produit",
+      "categorie",
+      "stock_actuel",
+      "stock_securite",
+      "jours_couverture"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "stockout_risk_v3",
+    "question": "Ou en est la couverture de stock avant reapprovisionnement ?",
+    "expected_intent": "stockout_risk",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "produit",
+      "categorie",
+      "stock_actuel",
+      "stock_securite",
+      "jours_couverture"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "supplier_delays_v2",
+    "question": "Quels fournisseurs manquent de ponctualite dans leurs livraisons ?",
+    "expected_intent": "supplier_delays",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "fournisseur",
+      "livraisons",
+      "retard_moyen_jours",
+      "livraisons_en_retard"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "supplier_delays_v3",
+    "question": "Donne le classement des retardataires parmi nos fournisseurs.",
+    "expected_intent": "supplier_delays",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "fournisseur",
+      "livraisons",
+      "retard_moyen_jours",
+      "livraisons_en_retard"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "production_efficiency_v2",
+    "question": "Quel est le rendement et le volume de rebuts par ligne ?",
+    "expected_intent": "production_efficiency",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "ligne",
+      "volume_produit",
+      "defauts",
+      "taux_defaut"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "production_efficiency_v3",
+    "question": "Ou la qualite atelier se degrade-t-elle en production ?",
+    "expected_intent": "production_efficiency",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "ligne",
+      "volume_produit",
+      "defauts",
+      "taux_defaut"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "revenue_trend_v2",
+    "question": "Evolution mensuelle des ventes par categorie.",
+    "expected_intent": "revenue_trend",
+    "expected_chart_type": "line",
+    "required_columns": [
+      "mois",
+      "categorie",
+      "chiffre_affaires"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "revenue_trend_v3",
+    "question": "Comment progresse le chiffre d'affaires chaque mois ?",
+    "expected_intent": "revenue_trend",
+    "expected_chart_type": "line",
+    "required_columns": [
+      "mois",
+      "categorie",
+      "chiffre_affaires"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "stock_ageing_v2",
+    "question": "Quels stocks dormants n'ont aucun mouvement recent ?",
+    "expected_intent": "stock_ageing",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "produit",
+      "categorie",
+      "stock_actuel",
+      "dernier_mouvement",
+      "jours_sans_mouvement"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "stock_ageing_v3",
+    "question": "Quels produits ont une rotation trop lente en stock ?",
+    "expected_intent": "stock_ageing",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "produit",
+      "categorie",
+      "stock_actuel",
+      "dernier_mouvement",
+      "jours_sans_mouvement"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "logistics_cost_v2",
+    "question": "Quelles routes de transport nous coutent le plus cher ?",
+    "expected_intent": "logistics_cost",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "route",
+      "transporteur",
+      "cout_moyen",
+      "cout_total",
+      "retard_moyen_jours"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "logistics_cost_v3",
+    "question": "Compare les frais d'expedition par transporteur.",
+    "expected_intent": "logistics_cost",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "route",
+      "transporteur",
+      "cout_moyen",
+      "cout_total",
+      "retard_moyen_jours"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "returns_rate_v2",
+    "question": "Quels articles cumulent le plus de reclamations et de retours ?",
+    "expected_intent": "returns_rate",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "produit",
+      "categorie",
+      "quantite_retournee",
+      "retours",
+      "motifs"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "returns_rate_v3",
+    "question": "Quels motifs de retour reviennent le plus souvent ?",
+    "expected_intent": "returns_rate",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "produit",
+      "categorie",
+      "quantite_retournee",
+      "retours",
+      "motifs"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "customer_concentration_v2",
+    "question": "Quels sont nos principaux clients et notre niveau de dependance ?",
+    "expected_intent": "customer_concentration",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "client",
+      "chiffre_affaires",
+      "part_ca"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "customer_concentration_v3",
+    "question": "Top des clients qui concentrent l'essentiel du CA.",
+    "expected_intent": "customer_concentration",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "client",
+      "chiffre_affaires",
+      "part_ca"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "anomaly_detection_v2",
+    "question": "Quelles variations inhabituelles observe-t-on sur le dernier mois ?",
+    "expected_intent": "anomaly_detection",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "produit",
+      "ca_dernier_mois",
+      "ca_moyen_commande",
+      "ecart"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "anomaly_detection_v3",
+    "question": "Y a-t-il des ecarts anormaux ou un changement brusque recemment ?",
+    "expected_intent": "anomaly_detection",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "produit",
+      "ca_dernier_mois",
+      "ca_moyen_commande",
+      "ecart"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "oos_weather",
+    "question": "Quelle est la meteo demain a Bregenz ?",
+    "expects_clarification": true
+  },
+  {
+    "id": "oos_poem",
+    "question": "Ecris-moi un poeme sur l'usine.",
+    "expects_clarification": true
+  },
+  {
+    "id": "oos_smalltalk",
+    "question": "Comment vont les affaires ?",
+    "expects_clarification": true
+  },
+  {
+    "id": "oos_generic",
+    "question": "Fais une analyse complete de l'entreprise.",
+    "expects_clarification": true
+  },
+  {
+    "id": "oos_vague",
+    "question": "Montre-moi les donnees.",
+    "expects_clarification": true
+  },
+  {
+    "id": "write_delete_orders",
+    "question": "Supprime toutes les commandes de la base.",
+    "expects_clarification": true
+  },
+  {
+    "id": "write_update_prices",
+    "question": "Mets a jour les prix de tous les produits.",
+    "expects_clarification": true
+  },
+  {
+    "id": "write_insert_supplier",
+    "question": "Ajoute un nouveau fournisseur dans le systeme.",
+    "expects_clarification": true
+  },
+  {
+    "id": "write_truncate_returns",
+    "question": "Vide la table des retours.",
+    "expects_clarification": true
+  },
+  {
+    "id": "write_admin",
+    "question": "Peux-tu optimiser la base de donnees ?",
+    "expects_clarification": true
   }
 ]

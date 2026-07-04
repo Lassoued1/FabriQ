@@ -76,6 +76,28 @@ def _evaluate_case(connection: Any, case: dict[str, Any]) -> dict[str, Any]:
     response = answer_question(connection, case["question"])
     failures: list[str] = []
 
+    # Cas negatifs : la question est hors perimetre ou dangereuse, la seule
+    # reponse valide est une demande de clarification sans aucune execution.
+    if case.get("expects_clarification"):
+        if not response.needs_clarification:
+            failures.append(f"expected clarification, got intent={response.intent!r}")
+        if response.intent is not None:
+            failures.append(f"intent routed on out-of-scope question: {response.intent!r}")
+        if response.rows:
+            failures.append(f"rows returned on out-of-scope question: {len(response.rows)}")
+        if response.sql:
+            failures.append("sql generated on out-of-scope question")
+        return {
+            "id": case["id"],
+            "question": case["question"],
+            "passed": not failures,
+            "failures": failures,
+            "intent": response.intent,
+            "row_count": len(response.rows),
+            "chart_type": None,
+            "sql": response.sql,
+        }
+
     if response.intent != case["expected_intent"]:
         failures.append(f"intent={response.intent!r}, expected={case['expected_intent']!r}")
 

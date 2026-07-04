@@ -146,6 +146,12 @@ class AgentTest(unittest.TestCase):
             with self.subTest(case=case["id"]):
                 response = answer_question(self.database, case["question"])
 
+                if case.get("expects_clarification"):
+                    self.assertTrue(response.needs_clarification)
+                    self.assertIsNone(response.intent)
+                    self.assertEqual(response.rows, [])
+                    continue
+
                 self.assertEqual(response.intent, case["expected_intent"])
                 self.assertTrue(response.validation.ok)
                 self.assertGreaterEqual(len(response.rows), case["min_rows"])

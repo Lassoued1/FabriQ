@@ -607,17 +607,49 @@ def semantic_catalog() -> dict[str, object]:
     }
 
 
+# Verbes exprimant une intention d'ecriture : la seule reponse valide est une
+# clarification, jamais une analyse (meme en lecture seule, ce serait trompeur).
+_WRITE_REQUEST_PATTERN = re.compile(
+    r"\b("
+    r"supprime[rsz]?|efface[rsz]?|vide[rsz]?|modifie[rsz]?|remplace[rsz]?|"
+    r"ajoute[rsz]?|insere[rsz]?|renomme[rsz]?|detrui[st]|detruire|"
+    r"mets? a jour|mise a jour|"
+    r"drop|delete|update|insert|truncate|alter"
+    r")\b"
+)
+
+
+def is_write_request(question: str) -> bool:
+    return bool(_WRITE_REQUEST_PATTERN.search(_normalize(question)))
+
+
 def select_intent(question: str) -> IntentDefinition | None:
     return select_intent_match(question).intent
 
 
+def _effective_keyword_count(keywords: tuple[str, ...]) -> int:
+    """Nombre de mots-cles reellement distincts.
+
+    'produit' et 'produits' matchent tous deux la meme occurrence : un
+    mot-cle inclus dans un autre mot-cle matche ne compte pas.
+    """
+    return sum(
+        1
+        for keyword in keywords
+        if not any(keyword != other and keyword in other for other in keywords)
+    )
+
+
 def select_intent_match(question: str) -> IntentMatch:
+    if is_write_request(question):
+        return IntentMatch(intent=None, score=0, matched_keywords=())
+
     candidates = rank_intent_candidates(question)
     if not candidates:
         return IntentMatch(intent=None, score=0, matched_keywords=())
 
     best_candidate = candidates[0]
-    if len(best_candidate.matched_keywords) >= 2 and best_candidate.score >= 4:
+    if _effective_keyword_count(best_candidate.matched_keywords) >= 2 and best_candidate.score >= 4:
         return IntentMatch(
             intent=best_candidate.intent,
             score=best_candidate.score,
