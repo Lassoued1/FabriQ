@@ -9,3 +9,4 @@ apscheduler>=3.10,<4
 slowapi>=0.1,<1
 prometheus-fastapi-instrumentator>=6,<7
 openpyxl>=3.1,<4
+sqlglot>=30,<31
