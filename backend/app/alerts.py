@@ -14,7 +14,7 @@ from uuid import uuid4
 from pydantic import BaseModel, Field
 
 from .database import ReadonlyDatabase
-from .semantic_layer import intent_by_id
+from .semantic_layer import QueryParameters, intent_by_id, render_intent_sql
 
 ALERTS_DIR = Path(__file__).resolve().parents[1] / "alerts"
 RULES_FILE = ALERTS_DIR / "rules.json"
@@ -151,7 +151,8 @@ def evaluate_rule(rule: AlertRule, database: ReadonlyDatabase) -> AlertEvent | N
         return None
 
     try:
-        rows = database.execute_readonly(intent.sql_for(database.dialect))
+        sql, _ = render_intent_sql(intent, database.dialect, QueryParameters())
+        rows = database.execute_readonly(sql)
     except Exception:
         return None
 

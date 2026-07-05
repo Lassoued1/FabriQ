@@ -10,7 +10,12 @@ from app.auth import UserContext, get_current_user
 from app.database import SQLiteDatabase
 from app.graph import inject_tenant_filter
 from app.llm import LlmSettings, check_ollama_health, llm_settings_from_env
-from app.semantic_layer import INTENTS, semantic_catalog
+from app.semantic_layer import (
+    INTENTS,
+    QueryParameters,
+    render_intent_sql,
+    semantic_catalog,
+)
 from app.sql_guard import validate_sql
 
 
@@ -155,9 +160,16 @@ class AgentTest(unittest.TestCase):
                 self.assertEqual(response.intent, case["expected_intent"])
                 self.assertTrue(response.validation.ok)
                 self.assertGreaterEqual(len(response.rows), case["min_rows"])
+                if "max_rows" in case:
+                    self.assertLessEqual(len(response.rows), case["max_rows"])
+                if "expected_sql_contains" in case:
+                    self.assertIn(case["expected_sql_contains"], response.sql or "")
                 self.assertTrue(set(case["required_columns"]).issubset(response.columns))
-                self.assertIsNotNone(response.chart)
-                self.assertEqual(response.chart.type, case["expected_chart_type"])
+                if case["expected_chart_type"] is None:
+                    self.assertIsNone(response.chart)
+                else:
+                    self.assertIsNotNone(response.chart)
+                    self.assertEqual(response.chart.type, case["expected_chart_type"])
 
     def test_paraphrase_questions_are_covered(self) -> None:
         paraphrase_path = Path(__file__).resolve().parents[1] / "evaluation" / "paraphrases.json"
@@ -228,7 +240,8 @@ class AgentTest(unittest.TestCase):
     def test_postgres_templates_pass_sql_guard(self) -> None:
         for intent in INTENTS:
             with self.subTest(intent=intent.id):
-                result = validate_sql(intent.sql_for("postgres"))
+                sql, _ = render_intent_sql(intent, "postgres", QueryParameters())
+                result = validate_sql(sql)
 
                 self.assertTrue(result.ok, result.blocked)
 
@@ -280,7 +293,7 @@ class V4Test(unittest.TestCase):
         """Injected tenant SQL must still pass the SQL guard."""
         for intent in INTENTS:
             with self.subTest(intent=intent.id):
-                original = intent.sql_for("postgres")
+                original, _ = render_intent_sql(intent, "postgres", QueryParameters())
                 tenanted = inject_tenant_filter(original, "tenant_demo")
                 result = validate_sql(tenanted)
                 self.assertTrue(result.ok, f"Guard blocked tenanted SQL: {result.blocked}")

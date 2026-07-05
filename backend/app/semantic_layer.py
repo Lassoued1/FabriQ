@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import calendar
 import re
 import unicodedata
 from dataclasses import dataclass
+from datetime import date
 
 from .database import Dialect
 from .models import ChartSpec
@@ -177,10 +179,10 @@ INTENTS: tuple[IntentDefinition, ...] = (
                   ROUND(100.0 * SUM(o.revenue - o.cost) / NULLIF(SUM(o.revenue), 0), 2) AS taux_marge
                 FROM orders o
                 JOIN products p ON p.id = o.product_id
-                WHERE o.order_date >= '2026-04-01'
+                WHERE o.order_date >= '{since_date}'
                 GROUP BY mois, p.reference
                 ORDER BY mois ASC, taux_marge ASC
-                LIMIT 50
+                LIMIT {top_n}
             """,
             "postgres": """
                 SELECT
@@ -190,10 +192,10 @@ INTENTS: tuple[IntentDefinition, ...] = (
                   ROUND(100.0 * SUM(o.revenue - o.cost) / NULLIF(SUM(o.revenue), 0), 2) AS taux_marge
                 FROM orders o
                 JOIN products p ON p.id = o.product_id
-                WHERE o.order_date >= DATE '2026-04-01'
+                WHERE o.order_date >= DATE '{since_date}'
                 GROUP BY TO_CHAR(o.order_date, 'YYYY-MM'), p.reference
                 ORDER BY mois ASC, taux_marge ASC
-                LIMIT 50
+                LIMIT {top_n}
             """,
         },
         chart=ChartSpec(type="line", x="mois", y="taux_marge", title="Evolution du taux de marge"),
@@ -218,11 +220,11 @@ INTENTS: tuple[IntentDefinition, ...] = (
                   ROUND(p.current_stock / MAX(1.0, SUM(o.quantity) / 90.0), 1) AS jours_couverture
                 FROM products p
                 JOIN orders o ON o.product_id = p.id
-                WHERE o.order_date >= '2026-04-01'
+                WHERE o.order_date >= '{since_date}'
                 GROUP BY p.id
-                HAVING jours_couverture < 30
+                HAVING jours_couverture < {horizon_days}
                 ORDER BY jours_couverture ASC
-                LIMIT 50
+                LIMIT {top_n}
             """,
             "postgres": """
                 SELECT
@@ -233,11 +235,11 @@ INTENTS: tuple[IntentDefinition, ...] = (
                   ROUND(p.current_stock::numeric / GREATEST(1.0, SUM(o.quantity)::numeric / 90.0), 1) AS jours_couverture
                 FROM products p
                 JOIN orders o ON o.product_id = p.id
-                WHERE o.order_date >= DATE '2026-04-01'
+                WHERE o.order_date >= DATE '{since_date}'
                 GROUP BY p.id, p.reference, p.category, p.current_stock, p.safety_stock
-                HAVING ROUND(p.current_stock::numeric / GREATEST(1.0, SUM(o.quantity)::numeric / 90.0), 1) < 30
+                HAVING ROUND(p.current_stock::numeric / GREATEST(1.0, SUM(o.quantity)::numeric / 90.0), 1) < {horizon_days}
                 ORDER BY jours_couverture ASC
-                LIMIT 50
+                LIMIT {top_n}
             """,
         },
         chart=ChartSpec(type="bar", x="produit", y="jours_couverture", title="Jours de couverture par produit"),
@@ -261,10 +263,10 @@ INTENTS: tuple[IntentDefinition, ...] = (
                   SUM(CASE WHEN sd.delay_days > 0 THEN 1 ELSE 0 END) AS livraisons_en_retard
                 FROM supplier_delays sd
                 JOIN suppliers s ON s.id = sd.supplier_id
-                WHERE sd.delivery_date >= '2026-01-01'
+                WHERE sd.delivery_date >= '{since_date}'
                 GROUP BY s.id
                 ORDER BY retard_moyen_jours DESC
-                LIMIT 50
+                LIMIT {top_n}
             """,
             "postgres": """
                 SELECT
@@ -274,10 +276,10 @@ INTENTS: tuple[IntentDefinition, ...] = (
                   SUM(CASE WHEN sd.delay_days > 0 THEN 1 ELSE 0 END) AS livraisons_en_retard
                 FROM supplier_delays sd
                 JOIN suppliers s ON s.id = sd.supplier_id
-                WHERE sd.delivery_date >= DATE '2026-01-01'
+                WHERE sd.delivery_date >= DATE '{since_date}'
                 GROUP BY s.id, s.name
                 ORDER BY retard_moyen_jours DESC
-                LIMIT 50
+                LIMIT {top_n}
             """,
         },
         chart=ChartSpec(type="bar", x="fournisseur", y="retard_moyen_jours", title="Retard moyen fournisseur"),
@@ -300,10 +302,10 @@ INTENTS: tuple[IntentDefinition, ...] = (
                   SUM(defects) AS defauts,
                   ROUND(100.0 * SUM(defects) / NULLIF(SUM(volume), 0), 2) AS taux_defaut
                 FROM production_batches
-                WHERE produced_at >= '2026-01-01'
+                WHERE produced_at >= '{since_date}'
                 GROUP BY line
                 ORDER BY taux_defaut DESC
-                LIMIT 50
+                LIMIT {top_n}
             """,
             "postgres": """
                 SELECT
@@ -312,10 +314,10 @@ INTENTS: tuple[IntentDefinition, ...] = (
                   SUM(defects) AS defauts,
                   ROUND(100.0 * SUM(defects) / NULLIF(SUM(volume), 0), 2) AS taux_defaut
                 FROM production_batches
-                WHERE produced_at >= DATE '2026-01-01'
+                WHERE produced_at >= DATE '{since_date}'
                 GROUP BY line
                 ORDER BY taux_defaut DESC
-                LIMIT 50
+                LIMIT {top_n}
             """,
         },
         chart=ChartSpec(type="bar", x="ligne", y="taux_defaut", title="Taux de defaut par ligne"),
@@ -338,10 +340,10 @@ INTENTS: tuple[IntentDefinition, ...] = (
                   ROUND(SUM(o.revenue), 2) AS chiffre_affaires
                 FROM orders o
                 JOIN products p ON p.id = o.product_id
-                WHERE o.order_date >= '2026-01-01'
+                WHERE o.order_date >= '{since_date}'
                 GROUP BY mois, p.category
                 ORDER BY mois ASC, chiffre_affaires DESC
-                LIMIT 80
+                LIMIT {top_n}
             """,
             "postgres": """
                 SELECT
@@ -350,10 +352,10 @@ INTENTS: tuple[IntentDefinition, ...] = (
                   ROUND(SUM(o.revenue), 2) AS chiffre_affaires
                 FROM orders o
                 JOIN products p ON p.id = o.product_id
-                WHERE o.order_date >= DATE '2026-01-01'
+                WHERE o.order_date >= DATE '{since_date}'
                 GROUP BY TO_CHAR(o.order_date, 'YYYY-MM'), p.category
                 ORDER BY mois ASC, chiffre_affaires DESC
-                LIMIT 80
+                LIMIT {top_n}
             """,
         },
         chart=ChartSpec(type="line", x="mois", y="chiffre_affaires", title="Chiffre d'affaires mensuel"),
@@ -380,7 +382,7 @@ INTENTS: tuple[IntentDefinition, ...] = (
                 JOIN inventory_movements im ON im.product_id = p.id
                 GROUP BY p.id
                 ORDER BY jours_sans_mouvement DESC
-                LIMIT 50
+                LIMIT {top_n}
             """,
             "postgres": """
                 SELECT
@@ -393,7 +395,7 @@ INTENTS: tuple[IntentDefinition, ...] = (
                 JOIN inventory_movements im ON im.product_id = p.id
                 GROUP BY p.id, p.reference, p.category, p.current_stock
                 ORDER BY jours_sans_mouvement DESC
-                LIMIT 50
+                LIMIT {top_n}
             """,
         },
         chart=ChartSpec(type="bar", x="produit", y="jours_sans_mouvement", title="Age du stock"),
@@ -417,10 +419,10 @@ INTENTS: tuple[IntentDefinition, ...] = (
                   ROUND(SUM(cost), 2) AS cout_total,
                   ROUND(AVG(delay_days), 1) AS retard_moyen_jours
                 FROM shipments
-                WHERE shipped_at >= '2026-01-01'
+                WHERE shipped_at >= '{since_date}'
                 GROUP BY route, carrier
                 ORDER BY cout_moyen DESC
-                LIMIT 50
+                LIMIT {top_n}
             """,
             "postgres": """
                 SELECT
@@ -430,10 +432,10 @@ INTENTS: tuple[IntentDefinition, ...] = (
                   ROUND(SUM(cost), 2) AS cout_total,
                   ROUND(AVG(delay_days), 1) AS retard_moyen_jours
                 FROM shipments
-                WHERE shipped_at >= DATE '2026-01-01'
+                WHERE shipped_at >= DATE '{since_date}'
                 GROUP BY route, carrier
                 ORDER BY cout_moyen DESC
-                LIMIT 50
+                LIMIT {top_n}
             """,
         },
         chart=ChartSpec(type="bar", x="route", y="cout_moyen", title="Cout moyen par route"),
@@ -458,10 +460,10 @@ INTENTS: tuple[IntentDefinition, ...] = (
                   GROUP_CONCAT(DISTINCT r.reason) AS motifs
                 FROM returns r
                 JOIN products p ON p.id = r.product_id
-                WHERE r.returned_at >= '2026-03-01'
+                WHERE r.returned_at >= '{since_date}'
                 GROUP BY p.id
                 ORDER BY quantite_retournee DESC
-                LIMIT 50
+                LIMIT {top_n}
             """,
             "postgres": """
                 SELECT
@@ -472,10 +474,10 @@ INTENTS: tuple[IntentDefinition, ...] = (
                   STRING_AGG(DISTINCT r.reason, ', ') AS motifs
                 FROM returns r
                 JOIN products p ON p.id = r.product_id
-                WHERE r.returned_at >= DATE '2026-03-01'
+                WHERE r.returned_at >= DATE '{since_date}'
                 GROUP BY p.id, p.reference, p.category
                 ORDER BY quantite_retournee DESC
-                LIMIT 50
+                LIMIT {top_n}
             """,
         },
         chart=ChartSpec(type="bar", x="produit", y="quantite_retournee", title="Retours par produit"),
@@ -500,7 +502,7 @@ INTENTS: tuple[IntentDefinition, ...] = (
                 JOIN customers c ON c.id = o.customer_id
                 GROUP BY c.id
                 ORDER BY chiffre_affaires DESC
-                LIMIT 50
+                LIMIT {top_n}
             """,
             "postgres": """
                 SELECT
@@ -511,7 +513,7 @@ INTENTS: tuple[IntentDefinition, ...] = (
                 JOIN customers c ON c.id = o.customer_id
                 GROUP BY c.id, c.name
                 ORDER BY chiffre_affaires DESC
-                LIMIT 50
+                LIMIT {top_n}
             """,
         },
         chart=ChartSpec(type="bar", x="client", y="part_ca", title="Part du CA par client"),
@@ -537,7 +539,7 @@ INTENTS: tuple[IntentDefinition, ...] = (
                 JOIN products p ON p.id = o.product_id
                 GROUP BY p.id
                 ORDER BY ABS(ecart) DESC
-                LIMIT 50
+                LIMIT {top_n}
             """,
             "postgres": """
                 SELECT
@@ -549,7 +551,7 @@ INTENTS: tuple[IntentDefinition, ...] = (
                 JOIN products p ON p.id = o.product_id
                 GROUP BY p.id, p.reference
                 ORDER BY ABS(ROUND(SUM(CASE WHEN TO_CHAR(o.order_date, 'YYYY-MM') = '2026-06' THEN o.revenue ELSE 0 END) - AVG(o.revenue), 2)) DESC
-                LIMIT 50
+                LIMIT {top_n}
             """,
         },
         chart=ChartSpec(type="bar", x="produit", y="ecart", title="Ecarts du dernier mois"),
@@ -559,7 +561,7 @@ INTENTS: tuple[IntentDefinition, ...] = (
 
 EXAMPLE_QUESTIONS = [
     "Quels produits ont vu leur marge baisser le trimestre dernier ?",
-    "Quels SKU risquent une rupture dans les 14 prochains jours ?",
+    "Quels SKU risquent une rupture dans les 30 prochains jours ?",
     "Quels fournisseurs ont ete le plus souvent en retard ?",
     "Quelles lignes de production ont eu le plus de defauts ?",
     "Montre le chiffre d'affaires mensuel par categorie.",
@@ -621,6 +623,124 @@ _WRITE_REQUEST_PATTERN = re.compile(
 
 def is_write_request(question: str) -> bool:
     return bool(_WRITE_REQUEST_PATTERN.search(_normalize(question)))
+
+
+# ─── Parametres de requete ────────────────────────────────────────────────────
+
+# Fin des donnees de demonstration : ancre des fenetres temporelles relatives.
+DEMO_DATA_ANCHOR = date(2026, 6, 30)
+
+TOP_N_BOUNDS = (1, 100)
+HORIZON_DAYS_BOUNDS = (1, 365)
+WINDOW_MONTHS_BOUNDS = (1, 24)
+
+# Parametres supportes par intention ; les defauts reproduisent exactement
+# les valeurs historiques des templates.
+PARAM_SPECS: dict[str, dict[str, object]] = {
+    "margin_trend": {"top_n": 50, "since_date": "2026-04-01"},
+    "stockout_risk": {"top_n": 50, "horizon_days": 30, "since_date": "2026-04-01"},
+    "supplier_delays": {"top_n": 50, "since_date": "2026-01-01"},
+    "production_efficiency": {"top_n": 50, "since_date": "2026-01-01"},
+    "revenue_trend": {"top_n": 80, "since_date": "2026-01-01"},
+    "stock_ageing": {"top_n": 50},
+    "logistics_cost": {"top_n": 50, "since_date": "2026-01-01"},
+    "returns_rate": {"top_n": 50, "since_date": "2026-03-01"},
+    "customer_concentration": {"top_n": 50},
+    "anomaly_detection": {"top_n": 50},
+}
+
+
+@dataclass(frozen=True)
+class QueryParameters:
+    top_n: int | None = None
+    horizon_days: int | None = None
+    window_months: int | None = None
+
+
+_TOP_N_PATTERN = re.compile(
+    r"\btop\s*(\d{1,3})\b"
+    r"|\b(\d{1,3})\s+(?:premiers?|principaux|principales|meilleurs?"
+    r"|plus\s+(?:gros|grands?|grosses|importants?))\b"
+)
+_HORIZON_PATTERN = re.compile(r"\b(\d{1,3})\s*(?:prochains?\s+)?jours?\b")
+_WINDOW_PATTERN = re.compile(
+    r"\b(\d{1,2})\s*derniers?\s+mois\b"
+    r"|\bdepuis\s+(\d{1,2})\s+mois\b"
+    r"|\bsur\s+(\d{1,2})\s+mois\b"
+)
+
+
+def extract_query_parameters(question: str) -> QueryParameters:
+    """Extraction deterministe des parametres exprimes dans la question.
+
+    Chaque valeur est un entier borne ; aucune chaine issue de la question
+    n'atteint jamais le SQL.
+    """
+    normalized = _normalize(question)
+
+    top_n = _first_int(_TOP_N_PATTERN.search(normalized))
+    horizon = _first_int(_HORIZON_PATTERN.search(normalized))
+    months = _first_int(_WINDOW_PATTERN.search(normalized))
+    if months is None:
+        if "trimestre" in normalized:
+            months = 3
+        elif "semestre" in normalized:
+            months = 6
+
+    return QueryParameters(
+        top_n=_clamp(top_n, *TOP_N_BOUNDS),
+        horizon_days=_clamp(horizon, *HORIZON_DAYS_BOUNDS),
+        window_months=_clamp(months, *WINDOW_MONTHS_BOUNDS),
+    )
+
+
+def render_intent_sql(
+    intent: IntentDefinition, dialect: Dialect, params: QueryParameters
+) -> tuple[str, list[str]]:
+    """Rend le template SQL avec les parametres extraits de la question.
+
+    Retourne le SQL final et la liste des parametres explicitement appliques
+    (vide si la question ne precisait rien : les defauts s'appliquent).
+    """
+    spec = PARAM_SPECS.get(intent.id, {"top_n": 50})
+    values: dict[str, object] = dict(spec)
+    applied: list[str] = []
+
+    if params.top_n is not None and "top_n" in spec:
+        values["top_n"] = params.top_n
+        applied.append(f"top {params.top_n}")
+    if params.horizon_days is not None and "horizon_days" in spec:
+        values["horizon_days"] = params.horizon_days
+        applied.append(f"horizon {params.horizon_days} jours")
+    if params.window_months is not None and "since_date" in spec:
+        since = _months_before(DEMO_DATA_ANCHOR, params.window_months).isoformat()
+        values["since_date"] = since
+        applied.append(f"fenetre {params.window_months} mois (depuis {since})")
+
+    return intent.sql_for(dialect).format_map(values), applied
+
+
+def _months_before(anchor: date, months: int) -> date:
+    total = anchor.year * 12 + (anchor.month - 1) - months
+    year, month = divmod(total, 12)
+    month += 1
+    day = min(anchor.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day)
+
+
+def _first_int(match: re.Match[str] | None) -> int | None:
+    if match is None:
+        return None
+    for group in match.groups():
+        if group:
+            return int(group)
+    return None
+
+
+def _clamp(value: int | None, lower: int, upper: int) -> int | None:
+    if value is None:
+        return None
+    return max(lower, min(upper, value))
 
 
 def select_intent(question: str) -> IntentDefinition | None:

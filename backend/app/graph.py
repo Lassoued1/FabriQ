@@ -15,9 +15,11 @@ from .semantic_layer import (
     EXAMPLE_BY_INTENT_ID,
     EXAMPLE_QUESTIONS,
     INTENTS,
+    extract_query_parameters,
     intent_by_id,
     is_write_request,
     rank_intent_candidates,
+    render_intent_sql,
     select_intent_match,
 )
 from .sql_guard import validate_sql
@@ -220,13 +222,21 @@ def clarify_node(state: FabriqState) -> dict:
 def generate_sql_node(state: FabriqState) -> dict:
     intent = state["intent"]
     database = state["database"]
-    sql = _compact_sql(intent.sql_for(database.dialect))
+    params = extract_query_parameters(state["question"])
+    rendered, applied = render_intent_sql(intent, database.dialect, params)
+    sql = _compact_sql(rendered)
+
+    if applied:
+        detail = (
+            f"Template SQL selected for {database.dialect}. "
+            f"Parametres extraits de la question: {', '.join(applied)}."
+        )
+    else:
+        detail = f"Template SQL selected for {database.dialect}. Parametres par defaut."
 
     return {
         "sql": sql,
-        "orchestration": [
-            _step("generate_sql", "done", f"Template SQL selected for {database.dialect}.")
-        ],
+        "orchestration": [_step("generate_sql", "done", detail)],
     }
 
 

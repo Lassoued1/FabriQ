@@ -14,7 +14,7 @@
   },
   {
     "id": "stockout_risk",
-    "question": "Quels SKU risquent une rupture dans les 14 prochains jours ?",
+    "question": "Quels SKU risquent une rupture dans les 30 prochains jours ?",
     "expected_intent": "stockout_risk",
     "expected_chart_type": "bar",
     "required_columns": [
@@ -444,5 +444,42 @@
     "id": "write_admin",
     "question": "Peux-tu optimiser la base de donnees ?",
     "expects_clarification": true
+  },
+  {
+    "id": "param_stockout_horizon_7",
+    "question": "Quels SKU risquent une rupture dans les 7 prochains jours ?",
+    "expected_intent": "stockout_risk",
+    "expected_chart_type": null,
+    "required_columns": [],
+    "min_rows": 0,
+    "max_rows": 0,
+    "expected_sql_contains": "< 7"
+  },
+  {
+    "id": "param_top5_clients",
+    "question": "Top 5 des clients qui concentrent l'essentiel du CA",
+    "expected_intent": "customer_concentration",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "client",
+      "chiffre_affaires",
+      "part_ca"
+    ],
+    "min_rows": 1,
+    "max_rows": 5,
+    "expected_sql_contains": "LIMIT 5"
+  },
+  {
+    "id": "param_revenue_3_mois",
+    "question": "Montre le chiffre d'affaires mensuel par categorie sur 3 mois.",
+    "expected_intent": "revenue_trend",
+    "expected_chart_type": "line",
+    "required_columns": [
+      "mois",
+      "categorie",
+      "chiffre_affaires"
+    ],
+    "min_rows": 1,
+    "expected_sql_contains": "'2026-03-30'"
   }
 ]

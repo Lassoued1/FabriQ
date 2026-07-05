@@ -107,6 +107,12 @@ def _evaluate_case(connection: Any, case: dict[str, Any]) -> dict[str, Any]:
     if len(response.rows) < case["min_rows"]:
         failures.append(f"row_count={len(response.rows)}, expected>={case['min_rows']}")
 
+    if "max_rows" in case and len(response.rows) > case["max_rows"]:
+        failures.append(f"row_count={len(response.rows)}, expected<={case['max_rows']}")
+
+    if "expected_sql_contains" in case and case["expected_sql_contains"] not in (response.sql or ""):
+        failures.append(f"sql does not contain {case['expected_sql_contains']!r}")
+
     missing_columns = sorted(set(case["required_columns"]) - set(response.columns))
     if missing_columns:
         failures.append(f"missing_columns={missing_columns}")
