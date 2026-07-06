@@ -6,7 +6,7 @@ FabriQ est un assistant d'analyse pour PME industrielles: une question en langag
 
 **Version courante: v0.11.0** — questions en francais et en allemand pilotant des requetes parametrees, garde-fou SQL par parseur AST, multi-utilisateurs, multi-tenant, orchestration LangGraph, alertes planifiees, observabilite Prometheus/Grafana, CI et tests E2E.
 
-![Demo FabriQ](docs/assets/fabriq-v0.10.0-demo.gif)
+![Demo FabriQ](docs/assets/fabriq-v0.11.0-demo.gif)
 
 ## Probleme
 

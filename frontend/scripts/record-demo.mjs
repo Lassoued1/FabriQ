@@ -71,6 +71,24 @@ await page.locator('.sql-block').scrollIntoViewIfNeeded()
 await page.waitForTimeout(300)
 await snap(1900)
 
+// 6. Meme boucle en allemand : routage bilingue
+await page.evaluate(() => window.scrollTo(0, 0))
+const german = 'Welche Lieferanten waren am häufigsten verspätet?'
+for (let i = 1; i <= chunks; i += 1) {
+  await question.fill(german.slice(0, Math.ceil((german.length * i) / chunks)))
+  await snap(i === chunks ? 700 : 380)
+}
+await page.getByRole('button', { name: /analyser/i }).click()
+await page.waitForFunction(
+  () => document.querySelector('.sql-block pre')?.textContent?.includes('supplier_delays'),
+  { timeout: 20_000 },
+)
+await page.waitForTimeout(600)
+await snap(1700)
+await page.locator('.chart-block').scrollIntoViewIfNeeded()
+await page.waitForTimeout(400)
+await snap(2000)
+
 writeFileSync(join(framesDir, 'manifest.json'), JSON.stringify(manifest, null, 2))
 await browser.close()
 console.log(`${index} frames -> ${framesDir}/`)
