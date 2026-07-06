@@ -4,9 +4,9 @@ FabriQ est un assistant d'analyse pour PME industrielles: une question en langag
 
 ## Etat actuel
 
-Version stabilisee: `FabriQ v0.10.0`.
+Version stabilisee: `FabriQ v0.11.0`.
 
-Version courante de developpement: aucune branche ouverte apres `v0.10.0`.
+Version courante de developpement: aucune branche ouverte apres `v0.11.0`.
 
 | Jalon | Etat | Commentaire |
 | --- | --- | --- |
@@ -24,6 +24,7 @@ Version courante de developpement: aucune branche ouverte apres `v0.10.0`.
 | Jalon 11 - V8 DevOps et observabilite v0.8.0 | Termine | CI GitHub Actions, Grafana, Slack, JWT refresh. |
 | Jalon 12 - V9 qualite et experience v0.9.0 | Termine | E2E Playwright, export PDF, toasts. |
 | Jalon 13 - V10 portfolio et export v0.10.0 | Termine | Export xlsx audit, depot Git initialise, README/architecture/changelog actualises, 60 tests. |
+| Jalon 14 - V11 gouvernance et bilingue v0.11.0 | Termine | Garde-fou AST + EXPLAIN + timeout, suite adversariale, parametres extraits des questions, allemand, refactor frontend, 78 tests. |
 
 ## Objectif MVP
 
@@ -260,9 +261,21 @@ Version livree: `v0.10.0`.
 - `CHANGELOG.md` consolide v0.1.0 -> v0.10.0.
 - 60 tests backend au total (55 en v0.9.0, +5 depuis).
 
+## Jalon 14 - V11 gouvernance et bilingue v0.11.0
+
+Version livree: `v0.11.0`.
+
+- Garde-fou SQL v2 : parseur AST sqlglot (SELECT pur, allowlist sur l'arbre, LIMIT litteral borne), EXPLAIN prealable, timeout via `FABRIQ_QUERY_TIMEOUT_SECONDS`.
+- Suite adversariale : 24 tentatives d'injection bloquees (`tests/test_sql_guard_adversarial.py`).
+- Extraction de parametres deterministe : top N, horizon jours, fenetre mois (FR et DE), bindes dans les templates et visibles dans la trace d'orchestration.
+- Routeur durci : deduplication des mots-cles imbriques, refus des demandes d'ecriture sans consulter le LLM.
+- Support des questions en allemand : mots-cles, verbes d'ecriture, parametres, suite `evaluation/german.json` 15/15.
+- Frontend refactore : App.tsx 1567 -> 667 lignes, 13 modules, tests Vitest, etape Unit tests en CI.
+- Golden 43/43, paraphrases 10/10, german 15/15, 78 tests + 135 sous-tests.
+
 ## Horizon suivant
 
-Prochaine version possible: `v0.11.0`.
+Prochaine version possible: `v0.12.0`.
 
 - Authentification OAuth2 / SSO (Keycloak ou Auth0) en remplacement des users env.
 - Webhooks sortants generiques configures depuis l'UI.

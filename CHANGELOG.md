@@ -2,6 +2,27 @@
 
 Historique des versions de FabriQ. Le detail complet de chaque jalon est dans [docs/ROADMAP.md](docs/ROADMAP.md).
 
+## v0.11.0 — 6 juillet 2026
+
+- **Garde-fou SQL v2** : validation par parseur AST (sqlglot) — instruction unique,
+  SELECT pur (UNION/CTE/verrous bloques), allowlist appliquee aux sous-requetes,
+  LIMIT litteral borne. EXPLAIN prealable et timeout de requete
+  (`FABRIQ_QUERY_TIMEOUT_SECONDS`) sur PostgreSQL et SQLite.
+- **Suite adversariale** : 24 tentatives d'injection bloquees 24/24.
+- **Extraction de parametres** : top N, horizon en jours et fenetre en mois extraits
+  de la question et bindes dans les templates ("rupture dans les 7 prochains jours"
+  vs "30 jours" produisent des requetes differentes). Parametres visibles dans la
+  trace d'orchestration.
+- **Questions en allemand** : ~100 mots-cles DE sur les 10 intentions, verbes
+  d'ecriture refuses, parametres extraits (Tagen, Monaten, Quartal, Halbjahr),
+  suite d'evaluation `--suite=german` 15/15.
+- **Routeur durci** : deduplication des mots-cles singulier/pluriel, refus des
+  demandes d'ecriture (FR et DE) sans jamais consulter le routeur LLM.
+- **Frontend refactore** : App.tsx 1567 -> 667 lignes, 13 modules extraits,
+  9 tests unitaires Vitest, etape "Unit tests" en CI.
+- **Evaluation** : golden 43 cas (negatifs et pieges inclus), checks `max_rows` et
+  `expected_sql_contains`. 78 tests backend + 135 sous-tests.
+
 ## v0.10.0 — 2 juillet 2026
 
 - Export Excel (xlsx) du journal d'audit: `GET /api/audit/export.xlsx` + bouton frontend.

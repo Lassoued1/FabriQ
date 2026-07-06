@@ -4,7 +4,7 @@
 
 FabriQ est un assistant d'analyse pour PME industrielles: une question en langage naturel, une requete SQL sure, une execution en lecture seule, puis une reponse lisible avec tableau, graphique, SQL visible et explication operationnelle.
 
-**Version courante: v0.10.0** — multi-utilisateurs, multi-tenant, orchestration LangGraph, alertes planifiees, observabilite Prometheus/Grafana, CI et tests E2E.
+**Version courante: v0.11.0** — questions en francais et en allemand pilotant des requetes parametrees, garde-fou SQL par parseur AST, multi-utilisateurs, multi-tenant, orchestration LangGraph, alertes planifiees, observabilite Prometheus/Grafana, CI et tests E2E.
 
 ![Demo FabriQ](docs/assets/fabriq-v0.10.0-demo.gif)
 
@@ -164,7 +164,8 @@ Questions recommandees:
 
 - `Quels fournisseurs ont ete le plus souvent en retard ?`
 - `Montre le chiffre d'affaires mensuel par categorie.`
-- `Quels SKU risquent une rupture dans les 14 prochains jours ?`
+- `Quels SKU risquent une rupture dans les 30 prochains jours ?`
+- `Welche Lieferanten waren am häufigsten verspätet?`
 - `Quels produits ont vu leur marge baisser le trimestre dernier ?`
 
 ## Limites explicites

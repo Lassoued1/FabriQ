@@ -45,7 +45,8 @@ npm run dev
 | --- | --- |
 | `Quels fournisseurs ont ete le plus souvent en retard ?` | Analyse fournisseur, graphique barre, audit. |
 | `Montre le chiffre d'affaires mensuel par categorie.` | Serie temporelle, graphique ligne. |
-| `Quels SKU risquent une rupture dans les 14 prochains jours ?` | Stock, priorisation risque, read-only. |
+| `Quels SKU risquent une rupture dans les 30 prochains jours ?` | Stock, priorisation risque, parametre extrait de la question. |
+| `Welche Lieferanten waren am häufigsten verspätet?` | Meme analyse en allemand, routage bilingue. |
 | `Quels produits ont vu leur marge baisser le trimestre dernier ?` | Marge, periode, SQL agrégé. |
 | `Quels clients concentrent le plus de chiffre d'affaires ?` | Concentration client et classement. |
 
