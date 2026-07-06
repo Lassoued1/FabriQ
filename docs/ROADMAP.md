@@ -266,6 +266,5 @@ Prochaine version possible: `v0.11.0`.
 
 - Authentification OAuth2 / SSO (Keycloak ou Auth0) en remplacement des users env.
 - Webhooks sortants generiques configures depuis l'UI.
-- Multi-langue: support anglais en plus du francais pour les questions.
-- Renforcement du garde-fou SQL: parseur AST (sqlglot), validation EXPLAIN, timeout de requete.
-- GIF de demonstration actualise et demo en ligne optionnelle.
+- Multi-langue: support anglais pour les questions (le francais et l'allemand sont livres).
+- Demo en ligne optionnelle.

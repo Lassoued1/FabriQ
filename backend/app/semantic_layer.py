@@ -169,6 +169,9 @@ INTENTS: tuple[IntentDefinition, ...] = (
             "marge", "marges", "rentabilite", "rentable", "profit", "profits",
             "baisser", "baisse", "baissent", "diminuer", "diminue", "erosion",
             "trimestre", "produit", "produits", "article", "articles",
+            # Allemand (forme normalisee sans umlauts)
+            "margen", "rendite", "rentabilitat", "gewinn", "gesunken",
+            "sinkt", "sinken", "ruckgang", "quartal", "produkt", "produkte", "artikel",
         ),
         sql={
             "sqlite": """
@@ -209,6 +212,9 @@ INTENTS: tuple[IntentDefinition, ...] = (
             "rupture", "ruptures", "sku", "stock", "stocks", "couverture",
             "prochains", "jours", "manquer", "manque", "disponibilite",
             "penurie", "reapprovisionnement", "reappro",
+            # Allemand
+            "engpass", "engpasse", "bestand", "bestande", "reichweite",
+            "nachschub", "ausverkauft", "knapp", "tagen", "nachsten",
         ),
         sql={
             "sqlite": """
@@ -253,6 +259,9 @@ INTENTS: tuple[IntentDefinition, ...] = (
             "fournisseur", "fournisseurs", "retard", "retards", "ponctualite",
             "livraison", "livraisons", "livrer", "livrent", "delai", "delais",
             "retardataire", "retardataires", "fiabilite",
+            # Allemand
+            "lieferant", "lieferanten", "verspatet", "verspatung", "verspatungen",
+            "lieferung", "lieferungen", "lieferzeit", "punktlichkeit", "zuverlassigkeit",
         ),
         sql={
             "sqlite": """
@@ -293,6 +302,9 @@ INTENTS: tuple[IntentDefinition, ...] = (
             "production", "ligne", "lignes", "defaut", "defauts", "defectueux",
             "efficacite", "qualite", "rendement", "rebuts", "atelier",
             "ateliers", "productivite", "scrap",
+            # Allemand
+            "produktion", "linie", "linien", "fehler", "ausschuss",
+            "qualitat", "effizienz", "fertigung", "defekte", "werk",
         ),
         sql={
             "sqlite": """
@@ -331,6 +343,9 @@ INTENTS: tuple[IntentDefinition, ...] = (
             "chiffre", "affaires", "ca", "mensuel", "mensuelle", "mensuelles",
             "mois", "categorie", "categories", "famille", "vente", "ventes",
             "revenu", "revenus", "evolution", "commercial", "facturation",
+            # Allemand
+            "umsatz", "umsatze", "erlos", "erlose", "monatlich", "monatliche",
+            "kategorie", "kategorien", "verkauf", "verkaufe", "entwicklung",
         ),
         sql={
             "sqlite": """
@@ -369,6 +384,9 @@ INTENTS: tuple[IntentDefinition, ...] = (
             "vieillissement", "stock", "stocks", "longtemps", "dormant",
             "dormants", "ancien", "anciens", "restes", "immobile", "rotation",
             "mouvement", "mouvements", "obsolescence",
+            # Allemand
+            "lager", "ladenhuter", "veraltet", "lange", "liegen",
+            "liegt", "bewegung", "alt", "alte",
         ),
         sql={
             "sqlite": """
@@ -409,6 +427,9 @@ INTENTS: tuple[IntentDefinition, ...] = (
             "logistique", "route", "routes", "transport", "transporteur",
             "transporteurs", "cher", "chers", "cheres", "coute", "coutent",
             "couteuses", "cout", "couts", "frais", "expedition", "expeditions",
+            # Allemand
+            "logistik", "routen", "spediteur", "fracht", "teuer",
+            "teurer", "kosten", "versand", "versandkosten",
         ),
         sql={
             "sqlite": """
@@ -449,6 +470,10 @@ INTENTS: tuple[IntentDefinition, ...] = (
             "retour", "retours", "taux", "produit", "produits", "article",
             "articles", "qualite", "motif", "motifs", "sav", "defectueux",
             "remboursement", "reclamation", "reclamations",
+            # Allemand
+            "retoure", "retouren", "rucksendung", "rucksendungen", "rucklaufe",
+            "reklamation", "reklamationen", "grund", "grunde",
+            "produkt", "produkte", "artikel",
         ),
         sql={
             "sqlite": """
@@ -491,6 +516,9 @@ INTENTS: tuple[IntentDefinition, ...] = (
             "client", "clients", "essentiel", "concentration", "concentrent",
             "representent", "dependance", "risque", "ca", "chiffre", "top",
             "principaux", "gros",
+            # Allemand
+            "kunde", "kunden", "konzentration", "abhangigkeit", "grossten",
+            "wichtigsten", "anteil", "umsatzanteil",
         ),
         sql={
             "sqlite": """
@@ -527,6 +555,9 @@ INTENTS: tuple[IntentDefinition, ...] = (
             "anomalie", "anomalies", "anormal", "anormaux", "change",
             "changement", "ecart", "ecarts", "dernier", "mois", "inhabituel",
             "inhabituelle", "variation", "variations", "surprise", "brusque",
+            # Allemand
+            "anomalien", "ungewohnlich", "ungewohnliche", "abweichung",
+            "abweichungen", "auffallig", "plotzlich", "verandert", "monat",
         ),
         sql={
             "sqlite": """
@@ -616,6 +647,9 @@ _WRITE_REQUEST_PATTERN = re.compile(
     r"supprime[rsz]?|efface[rsz]?|vide[rsz]?|modifie[rsz]?|remplace[rsz]?|"
     r"ajoute[rsz]?|insere[rsz]?|renomme[rsz]?|detrui[st]|detruire|"
     r"mets? a jour|mise a jour|"
+    # Allemand (forme normalisee)
+    r"losche[n]?|loesche[n]?|entferne[n]?|aktualisiere[n]?|"
+    r"ersetze[n]?|hinzufugen|einfugen|fuge|"
     r"drop|delete|update|insert|truncate|alter"
     r")\b"
 )
@@ -661,12 +695,17 @@ _TOP_N_PATTERN = re.compile(
     r"\btop\s*(\d{1,3})\b"
     r"|\b(\d{1,3})\s+(?:premiers?|principaux|principales|meilleurs?"
     r"|plus\s+(?:gros|grands?|grosses|importants?))\b"
+    r"|\b(?:die\s+)?(\d{1,3})\s+(?:grossten|wichtigsten|besten)\b"
 )
-_HORIZON_PATTERN = re.compile(r"\b(\d{1,3})\s*(?:prochains?\s+)?jours?\b")
+_HORIZON_PATTERN = re.compile(
+    r"\b(\d{1,3})\s*(?:prochains?\s+)?jours?\b"
+    r"|\b(\d{1,3})\s+tag(?:e|en)?\b"
+)
 _WINDOW_PATTERN = re.compile(
     r"\b(\d{1,2})\s*derniers?\s+mois\b"
     r"|\bdepuis\s+(\d{1,2})\s+mois\b"
     r"|\bsur\s+(\d{1,2})\s+mois\b"
+    r"|\b(?:letzten\s+)?(\d{1,2})\s+monat(?:e|en)?\b"
 )
 
 
@@ -682,9 +721,9 @@ def extract_query_parameters(question: str) -> QueryParameters:
     horizon = _first_int(_HORIZON_PATTERN.search(normalized))
     months = _first_int(_WINDOW_PATTERN.search(normalized))
     if months is None:
-        if "trimestre" in normalized:
+        if "trimestre" in normalized or "quartal" in normalized:
             months = 3
-        elif "semestre" in normalized:
+        elif "semestre" in normalized or "halbjahr" in normalized:
             months = 6
 
     return QueryParameters(
@@ -809,6 +848,6 @@ def intent_by_id(intent_id: str) -> IntentDefinition | None:
 
 
 def _normalize(value: str) -> str:
-    decomposed = unicodedata.normalize("NFD", value.lower())
+    decomposed = unicodedata.normalize("NFD", value.lower().replace("ß", "ss"))
     without_accents = "".join(char for char in decomposed if unicodedata.category(char) != "Mn")
     return without_accents

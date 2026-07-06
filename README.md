@@ -25,7 +25,7 @@ FabriQ transforme une question metier en requete SQL validee, execute cette requ
 
 ### Coeur d'analyse
 
-- Interface React pour poser une question metier en francais.
+- Interface React pour poser une question metier en francais ou en allemand.
 - Routeur hybride: mots-cles deterministes d'abord, Ollama optionnel en repli.
 - Couche semantique: 10 familles de questions industrielles (marge, rupture, retards fournisseurs, production, CA, stock, logistique, retours, clients, anomalies).
 - Generation SQL par templates controles, validation stricte avant execution.
@@ -140,6 +140,7 @@ Documentation interactive: `http://localhost:8000/docs` (OpenAPI).
 cd backend
 python scripts/evaluate.py --database=env
 python scripts/evaluate.py --database=env --suite=paraphrases
+python scripts/evaluate.py --database=env --suite=german
 ```
 
 Les rapports sont ecrits dans `backend/reports/`. Documentation: [docs/EVALUATION.md](docs/EVALUATION.md).
@@ -169,7 +170,7 @@ Questions recommandees:
 ## Limites explicites
 
 - Utilisateurs declares en variables d'environnement (pas encore de SSO/OAuth2 externe).
-- Questions en francais uniquement.
+- Questions en francais et en allemand (l'anglais reste a venir); l'interface reste en francais.
 - Pas d'ingestion PDF ni de RAG documentaire, pas de fine-tuning.
 - Ollama reste optionnel et local.
 - La base de donnees est une base industrielle de demonstration, pas une base client.
