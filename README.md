@@ -2,84 +2,87 @@
 
 [![CI](https://github.com/Lassoued1/FabriQ/actions/workflows/ci.yml/badge.svg)](https://github.com/Lassoued1/FabriQ/actions/workflows/ci.yml)
 
-FabriQ est un assistant d'analyse pour PME industrielles: une question en langage naturel, une requete SQL sure, une execution en lecture seule, puis une reponse lisible avec tableau, graphique, SQL visible et explication operationnelle.
+> **Portfolio Notice**
+> This repository is a demonstrative, standalone build shared for portfolio purposes. It showcases architecture, technical decisions, and code quality. The database is an industrial demo dataset, not a client database.
 
-**Version courante: v0.11.0** — questions en francais et en allemand pilotant des requetes parametrees, garde-fou SQL par parseur AST, multi-utilisateurs, multi-tenant, orchestration LangGraph, alertes planifiees, observabilite Prometheus/Grafana, CI et tests E2E.
+FabriQ is an analytics assistant for industrial SMEs: ask a question in natural language, get a safe SQL query, executed read-only, then a readable answer with table, chart, visible SQL, and an operational explanation.
 
-![Demo FabriQ](docs/assets/fabriq-v0.11.0-demo.gif)
+**Current version: v0.11.0** — questions in French and German driving parameterized queries, AST-parser SQL guardrail, multi-user, multi-tenant, LangGraph orchestration, scheduled alerts, Prometheus/Grafana observability, CI and E2E tests.
 
-## Probleme
+![FabriQ demo](docs/assets/fabriq-v0.11.0-demo.gif)
 
-Dans une PME industrielle, les donnees de production, stock, ventes, fournisseurs, retours et logistique restent souvent enfermees dans des bases relationnelles. Les utilisateurs metier ont besoin de reponses rapides sans ecrire de SQL et sans risquer de modifier la base.
+## Problem
 
-FabriQ transforme une question metier en requete SQL validee, execute cette requete en lecture seule, puis restitue un resultat comprehensible et auditable.
+In an industrial SME, production, stock, sales, supplier, returns, and logistics data often stays locked inside relational databases. Business users need fast answers without writing SQL and without risking any modification to the database.
 
-## Principes de conception
+FabriQ turns a business question into a validated SQL query, executes that query read-only, then returns a result that is understandable and auditable.
 
-- **Le LLM propose, le code decide.** Le LLM local (Ollama, optionnel) ne sert que de routeur d'intention en repli du routeur deterministe. Il ne genere jamais de SQL.
-- **Aucune ecriture en base, jamais.** Role PostgreSQL `fabriq_readonly` + garde-fou applicatif (SELECT seul, allowlist de tables, mots-cles bloques, LIMIT force, mono-instruction).
-- **Tout est transparent.** Le SQL, la trace d'orchestration et l'explication metier sont visibles dans chaque reponse.
-- **La precision se mesure par le resultat d'execution**, pas par similarite de texte SQL. Harnais golden 10/10 + suite paraphrases 10/10.
+## Design principles
 
-## Fonctionnalites
+- **The LLM proposes, the code decides.** The optional local LLM (Ollama) only acts as an intent router, as a fallback to the deterministic router. It never generates SQL.
+- **No writes to the database, ever.** Dedicated PostgreSQL role `fabriq_readonly` + an application-level guardrail (SELECT only, table allowlist, blocked keywords, forced LIMIT, single statement only).
+- **Everything is transparent.** The SQL, the orchestration trace, and the business explanation are visible in every response.
+- **Accuracy is measured by execution result**, not by SQL text similarity. Golden test harness 10/10 + paraphrase suite 10/10.
 
-### Coeur d'analyse
+## Features
 
-- Interface React pour poser une question metier en francais ou en allemand.
-- Routeur hybride: mots-cles deterministes d'abord, Ollama optionnel en repli.
-- Couche semantique: 10 familles de questions industrielles (marge, rupture, retards fournisseurs, production, CA, stock, logistique, retours, clients, anomalies).
-- Generation SQL par templates controles, validation stricte avant execution.
-- Reponse metier, tableau, graphique adapte a la forme des donnees, SQL visible.
-- Clarifications guidees avec options cliquables quand la question est ambigue.
-- Catalogue semantique expose (`GET /api/catalog`) et visible dans l'UI.
+### Analytics core
 
-### Multi-utilisateurs et securite
+- React interface to ask a business question in French or German.
+- Hybrid router: deterministic keywords first, optional Ollama as fallback.
+- Semantic layer: 10 families of industrial questions (margin, stockouts, supplier delays, production, revenue, inventory, logistics, returns, customers, anomalies).
+- SQL generation via controlled templates, strict validation before execution.
+- Business-readable answer, table, chart adapted to the data shape, visible SQL.
+- Guided clarifications with clickable options when a question is ambiguous.
+- Exposed semantic catalog (`GET /api/catalog`), also visible in the UI.
 
-- Authentification JWT (login, refresh automatique, page de connexion).
-- Multi-tenant: `tenant_id` propage du JWT jusqu'au filtrage SQL et a l'audit.
-- Roles utilisateur (admin/user), panneau admin (liste, activation/desactivation de comptes).
-- Rate limiting sur le login et l'analyse.
+### Multi-user & security
 
-### Alertes et observabilite
+- JWT authentication (login, automatic refresh, login page).
+- Multi-tenant: `tenant_id` propagated from the JWT down to SQL filtering and audit logging.
+- User roles (admin/user), admin panel (list, enable/disable accounts).
+- Rate limiting on login and analysis endpoints.
 
-- Alertes planifiees (APScheduler): regles CRUD, notifications webhook, Slack et e-mail SMTP.
-- Journal d'audit JSONL avec trace id, pagine et filtrable, export CSV et Excel.
-- Export PDF du rapport d'analyse cote frontend.
-- Endpoint Prometheus `/metrics`, dashboard Grafana provisionne.
-- Panneau d'observabilite frontend: sante API, base active, statut LLM, traces recentes.
+### Alerts & observability
 
-### Qualite
+- Scheduled alerts (APScheduler): CRUD rules, webhook, Slack, and SMTP email notifications.
+- JSONL audit log with trace ID, paginated and filterable, CSV and Excel export.
+- PDF export of the analysis report on the frontend.
+- Prometheus `/metrics` endpoint, provisioned Grafana dashboard.
+- Frontend observability panel: API health, active database, LLM status, recent traces.
 
-- 60 tests backend (pytest), suites E2E Playwright (auth, analyse, observabilite).
-- CI GitHub Actions: backend (pytest + ruff), frontend (tsc + build), smoke test Docker, E2E.
-- Tests de charge Locust.
-- Harnais d'evaluation golden et paraphrases, compares par resultat d'execution.
+### Quality
+
+- 60 backend tests (pytest), Playwright E2E suites (auth, analysis, observability).
+- GitHub Actions CI: backend (pytest + ruff), frontend (tsc + build), Docker smoke test, E2E.
+- Load testing with Locust.
+- Golden and paraphrase evaluation harness, compared by execution result.
 
 ## Architecture
 
-Le schema et les decisions techniques sont detailles dans [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Full schema and technical decisions are detailed in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ```text
-Utilisateur
-  -> Frontend React/Vite (auth JWT, chat, graphiques, panneaux admin/alertes/audit)
-  -> API FastAPI (rate limiting, multi-tenant)
-  -> Graphe LangGraph (routage -> SQL template -> validation -> execution -> reponse)
-  -> SQL guard + role PostgreSQL read-only
-  -> Reponse + graphique + trace d'orchestration + audit JSONL
+User
+  -> React/Vite frontend (JWT auth, chat, charts, admin/alerts/audit panels)
+  -> FastAPI (rate limiting, multi-tenant)
+  -> LangGraph graph (routing -> SQL template -> validation -> execution -> response)
+  -> SQL guard + read-only PostgreSQL role
+  -> Response + chart + orchestration trace + JSONL audit
   -> Prometheus / Grafana
 ```
 
-## Demarrage rapide (Docker Compose)
+## Quick start (Docker Compose)
 
 ```bash
 cp .env.example .env
-python scripts/init_env.py   # genere JWT secret et utilisateurs bcrypt
+python scripts/init_env.py   # generates JWT secret and bcrypt users
 docker compose up -d
 ```
 
 Services: frontend `http://localhost:80`, API `http://localhost:8000`, Prometheus `http://localhost:9090`, Grafana `http://localhost:3000`.
 
-## Demarrage local (developpement)
+## Local development
 
 ### 1. PostgreSQL
 
@@ -87,7 +90,7 @@ Services: frontend `http://localhost:80`, API `http://localhost:8000`, Prometheu
 docker compose up -d postgres
 ```
 
-La base expose `localhost:5432` et cree automatiquement le role applicatif read-only `fabriq_readonly`.
+The database exposes `localhost:5432` and automatically creates the read-only application role `fabriq_readonly`.
 
 ### 2. Backend
 
@@ -106,11 +109,11 @@ npm install
 npm run dev
 ```
 
-Ouvrir `http://localhost:5173`.
+Open `http://localhost:5173`.
 
-## LLM local optionnel
+## Optional local LLM
 
-Le comportement par defaut reste deterministe et fonctionne sans LLM.
+Default behavior stays fully deterministic and works without any LLM.
 
 ```bash
 $env:FABRIQ_LLM_PROVIDER="ollama"
@@ -118,21 +121,21 @@ $env:FABRIQ_OLLAMA_URL="http://127.0.0.1:11434"
 $env:FABRIQ_OLLAMA_MODEL="llama3.1"
 ```
 
-Le statut LLM est expose dans `/api/health` (non bloquant) et visible dans l'UI.
+LLM status is exposed in `/api/health` (non-blocking) and visible in the UI.
 
 ## API
 
-| Groupe | Endpoints |
+| Group | Endpoints |
 | --- | --- |
-| Sante | `GET /api/health`, `GET /metrics` |
+| Health | `GET /api/health`, `GET /metrics` |
 | Auth | `POST /api/auth/login`, `POST /api/auth/refresh`, `GET /api/auth/me` |
-| Analyse | `POST /api/ask` |
-| Catalogue | `GET /api/catalog`, `GET /api/examples` |
+| Analysis | `POST /api/ask` |
+| Catalog | `GET /api/catalog`, `GET /api/examples` |
 | Audit | `GET /api/audit/recent`, `GET /api/audit/export`, `GET /api/audit/export.xlsx` |
-| Alertes | `GET/POST /api/alerts`, `DELETE /api/alerts/{id}`, `GET /api/alerts/events`, `GET /api/alerts/events/export` |
+| Alerts | `GET/POST /api/alerts`, `DELETE /api/alerts/{id}`, `GET /api/alerts/events`, `GET /api/alerts/events/export` |
 | Admin | `GET /api/admin/users`, `POST /api/admin/users/{email}/disable`, `POST /api/admin/users/{email}/enable` |
 
-Documentation interactive: `http://localhost:8000/docs` (OpenAPI).
+Interactive documentation: `http://localhost:8000/docs` (OpenAPI).
 
 ## Evaluation
 
@@ -143,7 +146,7 @@ python scripts/evaluate.py --database=env --suite=paraphrases
 python scripts/evaluate.py --database=env --suite=german
 ```
 
-Les rapports sont ecrits dans `backend/reports/`. Documentation: [docs/EVALUATION.md](docs/EVALUATION.md).
+Reports are written to `backend/reports/`. Documentation: [docs/EVALUATION.md](docs/EVALUATION.md).
 
 ## Tests
 
@@ -158,27 +161,27 @@ npx playwright test                # E2E
 
 ## Demo
 
-Scenario de demonstration: [docs/DEMO.md](docs/DEMO.md).
+Demo scenario: [docs/DEMO.md](docs/DEMO.md).
 
-Questions recommandees:
+Recommended questions:
 
-- `Quels fournisseurs ont ete le plus souvent en retard ?`
-- `Montre le chiffre d'affaires mensuel par categorie.`
-- `Quels SKU risquent une rupture dans les 30 prochains jours ?`
+- `Which suppliers were most frequently late?`
+- `Show monthly revenue by category.`
+- `Which SKUs are at risk of stockout in the next 30 days?`
 - `Welche Lieferanten waren am häufigsten verspätet?`
-- `Quels produits ont vu leur marge baisser le trimestre dernier ?`
+- `Which products saw their margin drop last quarter?`
 
-## Limites explicites
+## Explicit limitations
 
-- Utilisateurs declares en variables d'environnement (pas encore de SSO/OAuth2 externe).
-- Questions en francais et en allemand (l'anglais reste a venir); l'interface reste en francais.
-- Pas d'ingestion PDF ni de RAG documentaire, pas de fine-tuning.
-- Ollama reste optionnel et local.
-- La base de donnees est une base industrielle de demonstration, pas une base client.
-- Le garde-fou SQL est applicatif (regex + allowlist) adosse au role read-only; un parseur AST formel et une validation EXPLAIN restent des ameliorations prevues.
+- Users are declared via environment variables (no external SSO/OAuth2 yet).
+- Questions supported in French and German (English still to come); the interface remains in French.
+- No PDF ingestion or document RAG, no fine-tuning.
+- Ollama remains optional and local.
+- The database is an industrial demo dataset, not a client database.
+- The SQL guardrail is application-level (regex + allowlist) backed by the read-only role; a formal AST parser and EXPLAIN-based validation remain planned improvements.
 
-## Historique et roadmap
+## History & roadmap
 
-- Historique des versions: [CHANGELOG.md](CHANGELOG.md)
-- Roadmap detaillee: [docs/ROADMAP.md](docs/ROADMAP.md)
-- Cahier des charges d'origine: [Cahier de charges.pdf](Cahier%20de%20charges.pdf)
+- Version history: [CHANGELOG.md](CHANGELOG.md)
+- Detailed roadmap: [docs/ROADMAP.md](docs/ROADMAP.md)
+- Original requirements document: [Cahier de charges.pdf](Cahier%20de%20charges.pdf)
