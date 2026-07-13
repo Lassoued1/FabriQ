@@ -182,6 +182,7 @@ Recommended questions:
 
 ## History & roadmap
 
+- Project notes (handoff, run, gotchas): [docs/PROJECT_NOTES.md](docs/PROJECT_NOTES.md)
 - Version history: [CHANGELOG.md](CHANGELOG.md)
 - Detailed roadmap: [docs/ROADMAP.md](docs/ROADMAP.md)
 - Original requirements document: [Cahier de charges.pdf](Cahier%20de%20charges.pdf)
