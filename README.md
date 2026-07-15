@@ -22,7 +22,7 @@ FabriQ turns a business question into a validated SQL query, executes that query
 - **The LLM proposes, the code decides.** The optional local LLM (Ollama) only acts as an intent router, as a fallback to the deterministic router. It never generates SQL.
 - **No writes to the database, ever.** Dedicated PostgreSQL role `fabriq_readonly` + an application-level guardrail (SELECT only, table allowlist, blocked keywords, forced LIMIT, single statement only).
 - **Everything is transparent.** The SQL, the orchestration trace, and the business explanation are visible in every response.
-- **Accuracy is measured by execution result**, not by SQL text similarity. Golden test harness 10/10 + paraphrase suite 10/10.
+- **Accuracy is measured by execution result**, not by SQL text similarity. 83 cases across four suites, all passing: golden 43/43, paraphrases 10/10, German 15/15, English 15/15.
 
 ## Features
 
@@ -181,7 +181,7 @@ Recommended questions:
 - No PDF ingestion or document RAG, no fine-tuning.
 - Ollama remains optional and local.
 - The database is an industrial demo dataset, not a client database.
-- The SQL guardrail is application-level (regex + allowlist) backed by the read-only role; a formal AST parser and EXPLAIN-based validation remain planned improvements.
+- The SQL guardrail is application-level (AST parser via sqlglot, table allowlist, forced LIMIT, single statement, pre-flight EXPLAIN and query timeout) backed by the read-only role — a defense-in-depth layer on top of, not a replacement for, database-level access control.
 
 ## History & roadmap
 
