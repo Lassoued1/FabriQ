@@ -1,6 +1,6 @@
 # FabriQ - Architecture
 
-Document aligne sur la v0.10.0. Le coeur du systeme reste deterministe, auditable et protege par un garde-fou SQL: le LLM local est optionnel et cantonne au routage d'intention.
+Document aligne sur la v0.11.0 (inclut les developpements v0.12.0/v0.13.0 en cours, non taguees). Le coeur du systeme reste deterministe, auditable et protege par un garde-fou SQL: le LLM local est optionnel et cantonne au routage d'intention.
 
 ## Vue d'ensemble
 
@@ -39,6 +39,13 @@ Document aligne sur la v0.10.0. Le coeur du systeme reste deterministe, auditabl
       | trace id,      |  | webhook, Slack,    |  | /metrics         |
       | export CSV/xlsx|  | e-mail SMTP        |  | + Grafana        |
       +----------------+  +--------------------+  +------------------+
+                                    |
+                                    v
+                      +-------------+--------------+
+                      | Webhooks sortants generiques|
+                      | HMAC-SHA256, retries,       |
+                      | garde SSRF, journal livraison|
+                      +------------------------------+
 ```
 
 ## Composants
@@ -56,6 +63,7 @@ Document aligne sur la v0.10.0. Le coeur du systeme reste deterministe, auditabl
 | Cache | `backend/app/cache.py` | Cache TTL 5 min thread-safe des resultats SQL (cle: sql + tenant). |
 | Audit | `backend/app/audit.py` | JSONL avec trace id, pagination, filtres, exports CSV et xlsx. |
 | Alertes | `backend/app/alerts.py` | Regles CRUD, APScheduler, notifications webhook/Slack/e-mail. |
+| Webhooks | `backend/app/webhooks.py` | Souscriptions par tenant, emission par type d'evenement, signature HMAC-SHA256, reessais a backoff, garde anti-SSRF, journal de livraison JSONL. |
 | Admin | `backend/app/disabled_users.py` | Desactivation/reactivation de comptes (fichier JSON). |
 | Evaluation | `backend/scripts/evaluate.py` | Harnais golden + paraphrases, compare par resultat d'execution. |
 | PostgreSQL | `backend/db/*.sql` | Schema industriel, seed 2 tenants, role `fabriq_readonly`. |
@@ -76,12 +84,13 @@ Document aligne sur la v0.10.0. Le coeur du systeme reste deterministe, auditabl
 ## Securite
 
 - **Base**: role PostgreSQL `fabriq_readonly` sans aucun droit d'ecriture.
-- **Application**: SELECT obligatoire, allowlist de tables, mots-cles d'ecriture/administration bloques, LIMIT force (<= 100), mono-instruction.
+- **Application**: parseur AST (sqlglot) — instruction unique, SELECT pur, allowlist appliquee a l'arbre (y compris sous-requetes), LIMIT litteral borne, EXPLAIN prealable, timeout de requete (`FABRIQ_QUERY_TIMEOUT_SECONDS`).
 - **API**: JWT obligatoire sur toutes les routes metier, roles admin, rate limiting login/ask.
 - **Isolation**: filtrage SQL par `tenant_id` injecte cote serveur, jamais fourni par le client.
 - **LLM**: aucun acces a la base, aucune generation de SQL, sortie contrainte au catalogue d'intentions.
+- **Webhooks**: URLs vers loopback / reseaux prives / link-local / reserve refusees a la creation (garde anti-SSRF), livraison signee HMAC-SHA256.
 
-Ameliorations prevues: parseur AST formel (sqlglot), validation EXPLAIN avant execution, timeout de requete cote base.
+Ameliorations prevues: authentification OAuth2/SSO en remplacement des utilisateurs env (voir [ROADMAP.md](ROADMAP.md)).
 
 ## Donnees
 
@@ -105,5 +114,5 @@ Schema industriel de demonstration: produits, commandes, clients, fournisseurs, 
 | Templates SQL | Requetes controlees et testables | Couverture limitee aux 10 intentions |
 | LLM = routeur seulement | Zero risque d'injection SQL par LLM | Le LLM n'apporte pas de nouvelles requetes |
 | Utilisateurs en env | Zero dependance externe | Pas de SSO/OAuth2, rotation manuelle |
-| Garde-fou regex + allowlist | Simple, rapide, lisible | Pas un parseur AST formel (prevu) |
+| Garde-fou par parseur AST (sqlglot) | Robuste face aux variantes syntaxiques, allowlist appliquee a l'arbre | Cout de maintenance superieur a un simple regex |
 | Base demo seedee | Demo reproductible | Pas de donnees client reelles |

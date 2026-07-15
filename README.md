@@ -7,7 +7,7 @@
 
 FabriQ is an analytics assistant for industrial SMEs: ask a question in natural language, get a safe SQL query, executed read-only, then a readable answer with table, chart, visible SQL, and an operational explanation.
 
-**Current version: v0.11.0** (v0.12.0 in progress: English questions) — questions in French, German and English driving parameterized queries, AST-parser SQL guardrail, multi-user, multi-tenant, LangGraph orchestration, scheduled alerts, Prometheus/Grafana observability, CI and E2E tests.
+**Current version: v0.11.0** (v0.12.0 and v0.13.0 in progress, not yet tagged: English questions, generic outbound webhooks) — questions in French, German and English driving parameterized queries, AST-parser SQL guardrail, multi-user, multi-tenant, LangGraph orchestration, scheduled alerts, outbound webhooks, Prometheus/Grafana observability, CI and E2E tests.
 
 ![FabriQ demo](docs/assets/fabriq-v0.11.0-demo.gif)
 
@@ -46,6 +46,7 @@ FabriQ turns a business question into a validated SQL query, executes that query
 ### Alerts & observability
 
 - Scheduled alerts (APScheduler): CRUD rules, webhook, Slack, and SMTP email notifications.
+- Generic outbound webhooks: per-tenant subscriptions by event type (`question.answered`, `question.blocked`, `alert.fired`, `auth.login_failed`), HMAC-SHA256 signed delivery with retry backoff, SSRF guard, delivery log.
 - JSONL audit log with trace ID, paginated and filterable, CSV and Excel export.
 - PDF export of the analysis report on the frontend.
 - Prometheus `/metrics` endpoint, provisioned Grafana dashboard.
@@ -133,6 +134,7 @@ LLM status is exposed in `/api/health` (non-blocking) and visible in the UI.
 | Catalog | `GET /api/catalog`, `GET /api/examples` |
 | Audit | `GET /api/audit/recent`, `GET /api/audit/export`, `GET /api/audit/export.xlsx` |
 | Alerts | `GET/POST /api/alerts`, `DELETE /api/alerts/{id}`, `GET /api/alerts/events`, `GET /api/alerts/events/export` |
+| Webhooks | `GET /api/webhooks/event-types`, `GET/POST /api/webhooks`, `DELETE /api/webhooks/{id}`, `POST /api/webhooks/{id}/test`, `GET /api/webhooks/{id}/deliveries` |
 | Admin | `GET /api/admin/users`, `POST /api/admin/users/{email}/disable`, `POST /api/admin/users/{email}/enable` |
 
 Interactive documentation: `http://localhost:8000/docs` (OpenAPI).
