@@ -7,7 +7,7 @@
 
 FabriQ is an analytics assistant for industrial SMEs: ask a question in natural language, get a safe SQL query, executed read-only, then a readable answer with table, chart, visible SQL, and an operational explanation.
 
-**Current version: v0.11.0** — questions in French and German driving parameterized queries, AST-parser SQL guardrail, multi-user, multi-tenant, LangGraph orchestration, scheduled alerts, Prometheus/Grafana observability, CI and E2E tests.
+**Current version: v0.11.0** (v0.12.0 in progress: English questions) — questions in French, German and English driving parameterized queries, AST-parser SQL guardrail, multi-user, multi-tenant, LangGraph orchestration, scheduled alerts, Prometheus/Grafana observability, CI and E2E tests.
 
 ![FabriQ demo](docs/assets/fabriq-v0.11.0-demo.gif)
 
@@ -28,7 +28,7 @@ FabriQ turns a business question into a validated SQL query, executes that query
 
 ### Analytics core
 
-- React interface to ask a business question in French or German.
+- React interface to ask a business question in French, German or English.
 - Hybrid router: deterministic keywords first, optional Ollama as fallback.
 - Semantic layer: 10 families of industrial questions (margin, stockouts, supplier delays, production, revenue, inventory, logistics, returns, customers, anomalies).
 - SQL generation via controlled templates, strict validation before execution.
@@ -53,7 +53,7 @@ FabriQ turns a business question into a validated SQL query, executes that query
 
 ### Quality
 
-- 60 backend tests (pytest), Playwright E2E suites (auth, analysis, observability).
+- 107 backend tests (pytest), 9 frontend unit tests (Vitest), and 10 Playwright E2E tests.
 - GitHub Actions CI: backend (pytest + ruff), frontend (tsc + build), Docker smoke test, E2E.
 - Load testing with Locust.
 - Golden and paraphrase evaluation harness, compared by execution result.
@@ -144,6 +144,7 @@ cd backend
 python scripts/evaluate.py --database=env
 python scripts/evaluate.py --database=env --suite=paraphrases
 python scripts/evaluate.py --database=env --suite=german
+python scripts/evaluate.py --database=env --suite=english
 ```
 
 Reports are written to `backend/reports/`. Documentation: [docs/EVALUATION.md](docs/EVALUATION.md).
@@ -152,7 +153,7 @@ Reports are written to `backend/reports/`. Documentation: [docs/EVALUATION.md](d
 
 ```bash
 cd backend
-python -m pytest tests -q          # 60 tests
+python -m pytest tests -q          # 107 backend tests
 
 cd frontend
 npm run build && npm run lint
@@ -174,7 +175,7 @@ Recommended questions:
 ## Explicit limitations
 
 - Users are declared via environment variables (no external SSO/OAuth2 yet).
-- Questions supported in French and German (English still to come); the interface remains in French.
+- Questions supported in French, German and English; the interface remains in French.
 - No PDF ingestion or document RAG, no fine-tuning.
 - Ollama remains optional and local.
 - The database is an industrial demo dataset, not a client database.
