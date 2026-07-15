@@ -138,3 +138,26 @@ export type AlertEvent = {
   triggered_value: number
   rows_snapshot: Record<string, string | number | null>[]
 }
+
+export type WebhookSubscription = {
+  id: string
+  tenant_id: string
+  name: string
+  url: string
+  events: string[]
+  secret: string
+  enabled: boolean
+  created_at: string
+}
+
+export type WebhookDelivery = {
+  webhook_id: string
+  event_id: string
+  event_type: string
+  tenant_id: string
+  attempt: number
+  status_code: number | null
+  ok: boolean
+  error: string | null
+  delivered_at: string
+}

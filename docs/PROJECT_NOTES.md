@@ -4,9 +4,9 @@ Document de reprise (handoff). Résume l'état courant, comment lancer, et les p
 
 ## État courant
 
-- **Version** : v0.11.0 (taguée, release publiée) — dépôt public https://github.com/Lassoued1/FabriQ
-- **CI** : GitHub Actions 100 % verte (backend, frontend, E2E Playwright, Docker).
-- **Tests** : 78 backend (pytest) + 135 sous-tests, 9 unitaires frontend (Vitest), 10 E2E (Playwright), 3 suites d'évaluation (golden 43, paraphrases 10, allemand 15).
+- **Version** : v0.11.0 taguée/publiée ; **v0.12.0** (support anglais) et **v0.13.0** (webhooks sortants génériques) en cours, non taguées — dépôt public https://github.com/Lassoued1/FabriQ
+- **CI** : GitHub Actions 100 % verte (backend, frontend, E2E Playwright, Docker). Le job backend exécute désormais toute la suite `tests` (avant : seul `test_agent.py`).
+- **Tests** : 107 backend (pytest) + 166 sous-tests, 9 unitaires frontend (Vitest), 10 E2E (Playwright), 4 suites d'évaluation (golden 43, paraphrases 10, allemand 15, anglais 15).
 
 ## Stack
 
@@ -17,7 +17,7 @@ Document de reprise (handoff). Résume l'état courant, comment lancer, et les p
 | Base de données | PostgreSQL (Docker, rôle read-only) ; SQLite en fallback dev/tests |
 | LLM | Ollama local, optionnel (routage d'intention uniquement, jamais de SQL) |
 | Observabilité | Prometheus + Grafana |
-| Langues des questions | Français et allemand |
+| Langues des questions | Français, allemand et anglais |
 
 Pas d'OCR, pas de RAG, pas de fine-tuning (hors périmètre assumé).
 
@@ -51,6 +51,7 @@ cd backend && python -m pytest tests -q
 cd backend && python scripts/evaluate.py            # golden
 cd backend && python scripts/evaluate.py --suite=paraphrases
 cd backend && python scripts/evaluate.py --suite=german
+cd backend && python scripts/evaluate.py --suite=english
 cd frontend && npm test                             # Vitest
 cd frontend && npx playwright test                  # E2E
 ```
@@ -62,10 +63,13 @@ cd frontend && npx playwright test                  # E2E
 3. **Lock npm / Windows** : les dépendances `@emnapi` (binding wasm de rolldown) disparaissent du `package-lock.json` à certaines installs → `npm ci` échoue en CI. Elles sont épinglées en devDependencies ; en cas de récidive : supprimer `node_modules` + `package-lock.json`, `npm install`, puis valider par un vrai `npm ci`.
 4. **Mots-clés allemands** : dans `semantic_layer.py`, les mots-clés sont stockés SANS umlauts (la normalisation replie ä/ö/ü et ß→ss) ; les questions de test, elles, s'écrivent AVEC umlauts. La translittération ae/oe/ue ne matche pas.
 5. **Port 5432** : partagé avec le projet WerkPilotVLBG (`D:\Reactprojects\WerkPilotVLBG-agent-kit`). Un seul stack peut le tenir à la fois.
+6. **"drop" ≠ écriture** : le mot anglais "drop" ("margin drop", "sales drop") est une tournure de LECTURE, pas une demande d'écriture. Il est volontairement absent de `_WRITE_REQUEST_PATTERN` ; un vrai `DROP TABLE` est bloqué par le garde-fou SQL (parseur AST dans `sql_guard.py`), pas par la détection en langage naturel. Ne pas le rajouter au pattern NL sous peine de refuser les questions de marge en anglais.
+7. **Webhooks — garde SSRF** : `webhooks.is_safe_webhook_url` refuse loopback / réseaux privés / link-local / réservé et les schémas non HTTP(S). Vérifiée à la création (400). Elle fait une résolution DNS (`getaddrinfo`) : les tests l'exercent avec des IP littérales pour rester hors-ligne. En démo locale, un webhook vers `localhost`/`127.0.0.1` est donc **refusé par conception** (utiliser une IP publique ou un tunnel).
+8. **Webhooks — données runtime** : `backend/webhooks/subscriptions.json` contient les secrets HMAC → dossier gitignoré (`backend/webhooks/`), jamais commité. Le journal de livraison est sous `backend/logs/` (déjà gitignoré).
 
-## Prochaines pistes (v0.12)
+## Prochaines pistes (au-delà)
 
-- Questions en anglais (le français et l'allemand sont livrés).
+- **Fait (v0.12, en cours)** : questions en anglais — mots-clés, verbes d'écriture, paramètres, suite `evaluation/english.json` 15/15.
+- **Fait (v0.13, en cours)** : webhooks sortants génériques — émetteur d'événements, signature HMAC, reessais, garde SSRF, panneau UI. Voir [ROADMAP.md](ROADMAP.md) jalon 16.
 - Authentification OAuth2 / SSO (Keycloak ou Auth0) en remplacement des utilisateurs env.
-- Webhooks sortants génériques configurables depuis l'UI.
 - Démo en ligne.

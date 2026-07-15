@@ -2,6 +2,37 @@
 
 Historique des versions de FabriQ. Le detail complet de chaque jalon est dans [docs/ROADMAP.md](docs/ROADMAP.md).
 
+## v0.13.0 — en cours (non taguee)
+
+- **Webhooks sortants generiques** : systeme d'evenements decouple des alertes.
+  Souscriptions par tenant (`app/webhooks.py`) enregistrant une URL, une liste
+  de types d'evenements et un secret HMAC ; persistance JSON.
+- **Types d'evenements** : `question.answered`, `question.blocked`, `alert.fired`,
+  `auth.login_failed`, emis depuis `/api/ask`, le login et `alerts._fire_rule`.
+- **Livraison robuste** : signature HMAC-SHA256 (`X-FabriQ-Signature`), reessais
+  a backoff (0/5/30 s), journal de livraison (JSONL) par tentative, emission
+  non bloquante (threads daemon).
+- **Garde anti-SSRF** : les URLs vers loopback / reseaux prives / link-local /
+  reserve, et les schemas non HTTP(S), sont refuses a la creation.
+- **API** : 6 endpoints `/api/webhooks*` (CRUD, `event-types`, `test`,
+  `deliveries`), tous scopes par tenant.
+- **Frontend** : `WebhooksPanel` (creation avec cases d'evenements, liste, bouton
+  Tester, journal de livraison repliable), monte dans la sidebar.
+- 107 tests backend + 166 sous-tests (+22 pour les webhooks).
+
+## v0.12.0 — en cours (non taguee)
+
+- **Questions en anglais** : mots-cles EN sur les 10 intentions, verbes d'ecriture
+  refuses (remove, update, delete, add...), parametres extraits (next N days,
+  last N months, quarter, semester, N largest). Suite d'evaluation
+  `--suite=english` 15/15.
+- **Detection d'ecriture affinee** : "drop" retire de la detection en langage
+  naturel ("margin drop", "sales drop" sont des tournures de lecture) ; un vrai
+  `DROP TABLE` reste bloque par le garde-fou SQL (parseur AST).
+- **CI elargie** : le job backend execute desormais toute la suite `tests`
+  (auparavant seul `test_agent.py`), ce qui couvre en CI les tests allemand,
+  anglais et parametres. 85 tests backend + 159 sous-tests.
+
 ## v0.11.0 — 6 juillet 2026
 
 - **Garde-fou SQL v2** : validation par parseur AST (sqlglot) — instruction unique,

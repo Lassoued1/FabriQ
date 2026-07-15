@@ -6,7 +6,7 @@ FabriQ est un assistant d'analyse pour PME industrielles: une question en langag
 
 Version stabilisee: `FabriQ v0.11.0`.
 
-Version courante de developpement: aucune branche ouverte apres `v0.11.0`.
+Version courante de developpement: `v0.12.0` (support anglais) et `v0.13.0` (webhooks sortants generiques) en cours, non taguees.
 
 | Jalon | Etat | Commentaire |
 | --- | --- | --- |
@@ -25,6 +25,8 @@ Version courante de developpement: aucune branche ouverte apres `v0.11.0`.
 | Jalon 12 - V9 qualite et experience v0.9.0 | Termine | E2E Playwright, export PDF, toasts. |
 | Jalon 13 - V10 portfolio et export v0.10.0 | Termine | Export xlsx audit, depot Git initialise, README/architecture/changelog actualises, 60 tests. |
 | Jalon 14 - V11 gouvernance et bilingue v0.11.0 | Termine | Garde-fou AST + EXPLAIN + timeout, suite adversariale, parametres extraits des questions, allemand, refactor frontend, 78 tests. |
+| Jalon 15 - V12 trilingue v0.12.0 | En cours | Support des questions en anglais, CI elargie a toute la suite tests, 85 tests. |
+| Jalon 16 - V13 webhooks sortants v0.13.0 | En cours | Webhooks generiques par evenement, signature HMAC, reessais, garde SSRF, panneau UI, 107 tests. |
 
 ## Objectif MVP
 
@@ -273,11 +275,30 @@ Version livree: `v0.11.0`.
 - Frontend refactore : App.tsx 1567 -> 667 lignes, 13 modules, tests Vitest, etape Unit tests en CI.
 - Golden 43/43, paraphrases 10/10, german 15/15, 78 tests + 135 sous-tests.
 
+## Jalon 15 - V12 trilingue v0.12.0
+
+Version en cours (non taguee).
+
+- Support des questions en anglais : mots-cles EN sur les 10 intentions, verbes d'ecriture refuses (remove, update, delete, add...), parametres extraits (next N days, last N months, quarter, semester, N largest).
+- Suite d'evaluation `evaluation/english.json`, lancee par `scripts/evaluate.py --suite=english` : 15/15.
+- Detection d'ecriture affinee : "drop" retire de la detection en langage naturel ("margin drop" est une tournure de lecture) ; un vrai `DROP TABLE` reste bloque par le garde-fou SQL (parseur AST).
+- CI elargie : le job backend execute toute la suite `tests` (avant : seul `test_agent.py`), couvrant en CI l'allemand, l'anglais et les parametres.
+- Golden 43/43, paraphrases 10/10, german 15/15, english 15/15, 85 tests + 159 sous-tests.
+
+## Jalon 16 - V13 webhooks sortants v0.13.0
+
+Version en cours (non taguee).
+
+- Emetteur d'evenements central (`app/webhooks.py`) decouple des alertes : souscription = URL + types abonnes + secret HMAC, persistance JSON par tenant.
+- Types d'evenements : `question.answered`, `question.blocked` (depuis `/api/ask`), `auth.login_failed` (login), `alert.fired` (pont depuis `alerts._fire_rule`).
+- Livraison signee HMAC-SHA256 (`X-FabriQ-Signature`), reessais a backoff (0/5/30 s), journal de livraison JSONL par tentative, emission non bloquante.
+- Garde anti-SSRF : refus des URLs internes (loopback / prive / link-local / reserve) et des schemas non HTTP(S).
+- 6 endpoints `/api/webhooks*` (CRUD, event-types, test, deliveries) scopes par tenant ; panneau `WebhooksPanel` cote frontend.
+- Le champ `webhook_url` par-regle des alertes reste pour retrocompatibilite (deprecie).
+
 ## Horizon suivant
 
-Prochaine version possible: `v0.12.0`.
+Prochaine version possible: `v0.14.0`.
 
 - Authentification OAuth2 / SSO (Keycloak ou Auth0) en remplacement des users env.
-- Webhooks sortants generiques configures depuis l'UI.
-- Multi-langue: support anglais pour les questions (le francais et l'allemand sont livres).
 - Demo en ligne optionnelle.

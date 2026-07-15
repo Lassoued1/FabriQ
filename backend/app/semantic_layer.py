@@ -172,6 +172,10 @@ INTENTS: tuple[IntentDefinition, ...] = (
             # Allemand (forme normalisee sans umlauts)
             "margen", "rendite", "rentabilitat", "gewinn", "gesunken",
             "sinkt", "sinken", "ruckgang", "quartal", "produkt", "produkte", "artikel",
+            # Anglais
+            "margin", "margins", "profitability", "drop", "drops", "dropped",
+            "falling", "declining", "decline", "quarter", "product", "products",
+            "item", "items",
         ),
         sql={
             "sqlite": """
@@ -215,6 +219,9 @@ INTENTS: tuple[IntentDefinition, ...] = (
             # Allemand
             "engpass", "engpasse", "bestand", "bestande", "reichweite",
             "nachschub", "ausverkauft", "knapp", "tagen", "nachsten",
+            # Anglais
+            "stockout", "stockouts", "shortage", "shortages", "coverage",
+            "replenishment", "runout", "risk", "days", "next",
         ),
         sql={
             "sqlite": """
@@ -262,6 +269,9 @@ INTENTS: tuple[IntentDefinition, ...] = (
             # Allemand
             "lieferant", "lieferanten", "verspatet", "verspatung", "verspatungen",
             "lieferung", "lieferungen", "lieferzeit", "punktlichkeit", "zuverlassigkeit",
+            # Anglais
+            "supplier", "suppliers", "late", "delay", "delays", "delivery",
+            "deliveries", "punctuality", "reliability",
         ),
         sql={
             "sqlite": """
@@ -305,6 +315,9 @@ INTENTS: tuple[IntentDefinition, ...] = (
             # Allemand
             "produktion", "linie", "linien", "fehler", "ausschuss",
             "qualitat", "effizienz", "fertigung", "defekte", "werk",
+            # Anglais
+            "line", "lines", "defect", "defects", "quality", "efficiency",
+            "yield", "workshop",
         ),
         sql={
             "sqlite": """
@@ -346,6 +359,9 @@ INTENTS: tuple[IntentDefinition, ...] = (
             # Allemand
             "umsatz", "umsatze", "erlos", "erlose", "monatlich", "monatliche",
             "kategorie", "kategorien", "verkauf", "verkaufe", "entwicklung",
+            # Anglais
+            "revenue", "revenues", "sales", "monthly", "category", "categories",
+            "turnover",
         ),
         sql={
             "sqlite": """
@@ -387,6 +403,9 @@ INTENTS: tuple[IntentDefinition, ...] = (
             # Allemand
             "lager", "ladenhuter", "veraltet", "lange", "liegen",
             "liegt", "bewegung", "alt", "alte",
+            # Anglais
+            "sitting", "idle", "stale", "ageing", "aging", "long",
+            "movement", "obsolete", "unsold",
         ),
         sql={
             "sqlite": """
@@ -430,6 +449,9 @@ INTENTS: tuple[IntentDefinition, ...] = (
             # Allemand
             "logistik", "routen", "spediteur", "fracht", "teuer",
             "teurer", "kosten", "versand", "versandkosten",
+            # Anglais
+            "logistics", "carrier", "carriers", "freight", "expensive",
+            "cost", "costs", "shipping", "shipment", "shipments",
         ),
         sql={
             "sqlite": """
@@ -474,6 +496,9 @@ INTENTS: tuple[IntentDefinition, ...] = (
             "retoure", "retouren", "rucksendung", "rucksendungen", "rucklaufe",
             "reklamation", "reklamationen", "grund", "grunde",
             "produkt", "produkte", "artikel",
+            # Anglais
+            "return", "returns", "rate", "refund", "complaint", "complaints",
+            "product", "products", "item", "items",
         ),
         sql={
             "sqlite": """
@@ -519,6 +544,9 @@ INTENTS: tuple[IntentDefinition, ...] = (
             # Allemand
             "kunde", "kunden", "konzentration", "abhangigkeit", "grossten",
             "wichtigsten", "anteil", "umsatzanteil",
+            # Anglais
+            "customer", "customers", "dependence", "dependency", "largest",
+            "biggest", "share",
         ),
         sql={
             "sqlite": """
@@ -558,6 +586,9 @@ INTENTS: tuple[IntentDefinition, ...] = (
             # Allemand
             "anomalien", "ungewohnlich", "ungewohnliche", "abweichung",
             "abweichungen", "auffallig", "plotzlich", "verandert", "monat",
+            # Anglais
+            "anomaly", "anomalies", "unusual", "unusually", "abnormal",
+            "deviation", "spike", "sudden", "suddenly", "changed", "month",
         ),
         sql={
             "sqlite": """
@@ -650,7 +681,13 @@ _WRITE_REQUEST_PATTERN = re.compile(
     # Allemand (forme normalisee)
     r"losche[n]?|loesche[n]?|entferne[n]?|aktualisiere[n]?|"
     r"ersetze[n]?|hinzufugen|einfugen|fuge|"
-    r"drop|delete|update|insert|truncate|alter"
+    # Anglais (verbes naturels + verbes SQL)
+    # NB : "drop" est volontairement absent — "margin/sales drop" est une
+    # tournure de lecture courante ; un vrai "DROP TABLE" reste bloque par le
+    # garde-fou SQL (parseur AST), pas par la detection en langage naturel.
+    r"remove[ds]?|erase[ds]?|wipe[ds]?|rename[ds]?|replace[ds]?|"
+    r"modif(?:y|ies|ied)|clear[s]?|add[s]?|"
+    r"delete|update|insert|truncate|alter"
     r")\b"
 )
 
@@ -696,16 +733,19 @@ _TOP_N_PATTERN = re.compile(
     r"|\b(\d{1,3})\s+(?:premiers?|principaux|principales|meilleurs?"
     r"|plus\s+(?:gros|grands?|grosses|importants?))\b"
     r"|\b(?:die\s+)?(\d{1,3})\s+(?:grossten|wichtigsten|besten)\b"
+    r"|\b(?:the\s+)?(\d{1,3})\s+(?:largest|biggest|leading|top)\b"
 )
 _HORIZON_PATTERN = re.compile(
     r"\b(\d{1,3})\s*(?:prochains?\s+)?jours?\b"
     r"|\b(\d{1,3})\s+tag(?:e|en)?\b"
+    r"|\b(?:next\s+|within\s+|in\s+)?(\d{1,3})\s+days?\b"
 )
 _WINDOW_PATTERN = re.compile(
     r"\b(\d{1,2})\s*derniers?\s+mois\b"
     r"|\bdepuis\s+(\d{1,2})\s+mois\b"
     r"|\bsur\s+(\d{1,2})\s+mois\b"
     r"|\b(?:letzten\s+)?(\d{1,2})\s+monat(?:e|en)?\b"
+    r"|\b(?:last\s+|past\s+|over\s+|in\s+)?(\d{1,2})\s+months?\b"
 )
 
 
@@ -721,9 +761,15 @@ def extract_query_parameters(question: str) -> QueryParameters:
     horizon = _first_int(_HORIZON_PATTERN.search(normalized))
     months = _first_int(_WINDOW_PATTERN.search(normalized))
     if months is None:
-        if "trimestre" in normalized or "quartal" in normalized:
+        if "trimestre" in normalized or "quartal" in normalized or "quarter" in normalized:
             months = 3
-        elif "semestre" in normalized or "halbjahr" in normalized:
+        elif (
+            "semestre" in normalized
+            or "halbjahr" in normalized
+            or "semester" in normalized
+            or "half year" in normalized
+            or "half-year" in normalized
+        ):
             months = 6
 
     return QueryParameters(

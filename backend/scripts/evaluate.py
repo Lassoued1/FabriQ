@@ -17,16 +17,19 @@ from app.database import SQLiteDatabase, create_database_from_env
 GOLDEN_FILE = ROOT / "evaluation" / "golden.json"
 PARAPHRASE_FILE = ROOT / "evaluation" / "paraphrases.json"
 GERMAN_FILE = ROOT / "evaluation" / "german.json"
+ENGLISH_FILE = ROOT / "evaluation" / "english.json"
 REPORT_DIR = ROOT / "reports"
 EVALUATION_SUITES = {
     "golden": GOLDEN_FILE,
     "paraphrases": PARAPHRASE_FILE,
     "german": GERMAN_FILE,
+    "english": ENGLISH_FILE,
 }
 REPORT_FILES = {
     "golden": REPORT_DIR / "evaluation-latest.json",
     "paraphrases": REPORT_DIR / "evaluation-paraphrases-latest.json",
     "german": REPORT_DIR / "evaluation-german-latest.json",
+    "english": REPORT_DIR / "evaluation-english-latest.json",
 }
 
 

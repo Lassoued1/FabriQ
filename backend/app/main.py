@@ -30,6 +30,19 @@ from .database import create_database_from_env
 from .llm import check_ollama_health, llm_settings_from_env
 from .models import AskRequest, AskResponse, LoginRequest, TokenResponse
 from .semantic_layer import EXAMPLE_QUESTIONS, semantic_catalog
+from .webhooks import (
+    EVENT_TYPES,
+    WebhookCreate,
+    WebhookSubscription,
+    add_subscription,
+    delete_subscription,
+    emit,
+    is_safe_webhook_url,
+    recent_deliveries,
+    send_test,
+    subscription_by_id,
+    subscriptions_for_tenant,
+)
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -49,6 +62,7 @@ _TAGS_METADATA = [
     {"name": "audit", "description": "Journal d'audit des analyses : historique paginé et export CSV."},
     {"name": "catalog", "description": "Catalogue sémantique : intentions, exemples et tables disponibles."},
     {"name": "alerts", "description": "Règles d'alerte planifiées, événements déclenchés et export CSV."},
+    {"name": "webhooks", "description": "Webhooks sortants génériques : souscriptions par événement, livraison signée et journal."},
     {"name": "admin", "description": "Administration des utilisateurs (rôle admin requis)."},
 ]
 
@@ -120,6 +134,15 @@ def health() -> dict[str, object]:
 def login(request: Request, payload: LoginRequest) -> TokenResponse:
     user = authenticate_user(payload.email, payload.password)
     if user is None:
+        # Signal de sécurité : une tentative ratée sur un compte connu notifie
+        # le tenant de ce compte (email inconnu -> aucun tenant, on ignore).
+        known = next((u for u in list_users() if u.email == payload.email), None)
+        if known is not None:
+            emit(
+                "auth.login_failed",
+                known.tenant_id,
+                {"email": payload.email, "ip": get_remote_address(request)},
+            )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email ou mot de passe incorrect.",
@@ -172,6 +195,30 @@ def catalog(current_user: CurrentUser) -> dict[str, object]:
 def ask(request: Request, payload: AskRequest, current_user: CurrentUser) -> AskResponse:
     response = answer_question(database, payload.question, user_ctx=current_user)
     response.trace_id = log_analysis(response, user_ctx=current_user)
+
+    if response.needs_clarification or not response.validation.ok:
+        emit(
+            "question.blocked",
+            current_user.tenant_id,
+            {
+                "question": response.question,
+                "needs_clarification": response.needs_clarification,
+                "blocked": response.validation.blocked,
+                "trace_id": response.trace_id,
+            },
+        )
+    else:
+        emit(
+            "question.answered",
+            current_user.tenant_id,
+            {
+                "intent": response.intent,
+                "sql": response.sql,
+                "row_count": len(response.rows),
+                "chart_type": response.chart.type if response.chart else None,
+                "trace_id": response.trace_id,
+            },
+        )
     return response
 
 
@@ -286,3 +333,63 @@ def alert_events_export(current_user: CurrentUser) -> Response:
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=alert_events.csv"},
     )
+
+
+# ─── Webhooks endpoints ───────────────────────────────────────────────────────
+
+@app.get("/api/webhooks/event-types", tags=["webhooks"], summary="Types d'événements auxquels s'abonner")
+def webhook_event_types(current_user: CurrentUser) -> dict[str, list[str]]:
+    return {"event_types": list(EVENT_TYPES)}
+
+
+@app.get("/api/webhooks", tags=["webhooks"], summary="Lister les webhooks du tenant")
+def list_webhooks(current_user: CurrentUser) -> dict[str, list]:
+    return {"webhooks": [s.model_dump() for s in subscriptions_for_tenant(current_user.tenant_id)]}
+
+
+@app.post("/api/webhooks", tags=["webhooks"], summary="Créer un webhook", responses={400: {"description": "URL non autorisée (SSRF)."}, 422: {"description": "Type d'événement inconnu."}})
+def create_webhook(payload: WebhookCreate, current_user: CurrentUser) -> dict[str, object]:
+    unknown = [e for e in payload.events if e not in EVENT_TYPES]
+    if unknown:
+        raise HTTPException(status_code=422, detail=f"Types d'événement inconnus : {unknown}")
+    if not is_safe_webhook_url(payload.url):
+        raise HTTPException(status_code=400, detail="URL non autorisée (schéma non HTTP(S) ou adresse interne).")
+    subscription = add_subscription(
+        WebhookSubscription(
+            tenant_id=current_user.tenant_id,
+            name=payload.name,
+            url=payload.url,
+            events=payload.events,
+        )
+    )
+    return {"webhook": subscription.model_dump()}
+
+
+@app.delete("/api/webhooks/{webhook_id}", tags=["webhooks"], summary="Supprimer un webhook", responses={404: {"description": "Webhook introuvable."}})
+def remove_webhook(webhook_id: str, current_user: CurrentUser) -> dict[str, bool]:
+    if not delete_subscription(webhook_id, current_user.tenant_id):
+        raise HTTPException(status_code=404, detail="Webhook introuvable.")
+    return {"deleted": True}
+
+
+@app.post("/api/webhooks/{webhook_id}/test", tags=["webhooks"], summary="Envoyer un événement ping de test", responses={404: {"description": "Webhook introuvable."}})
+def test_webhook(webhook_id: str, current_user: CurrentUser) -> dict[str, object]:
+    subscription = subscription_by_id(webhook_id, current_user.tenant_id)
+    if subscription is None:
+        raise HTTPException(status_code=404, detail="Webhook introuvable.")
+    attempts = send_test(subscription)
+    delivered = any(a["ok"] for a in attempts)
+    return {"delivered": delivered, "attempts": attempts}
+
+
+@app.get("/api/webhooks/{webhook_id}/deliveries", tags=["webhooks"], summary="Journal de livraison d'un webhook (paginé)", responses={404: {"description": "Webhook introuvable."}})
+def webhook_deliveries(
+    webhook_id: str,
+    current_user: CurrentUser,
+    page: int = 1,
+    limit: int = 20,
+) -> dict[str, object]:
+    if subscription_by_id(webhook_id, current_user.tenant_id) is None:
+        raise HTTPException(status_code=404, detail="Webhook introuvable.")
+    deliveries, total = recent_deliveries(webhook_id, current_user.tenant_id, limit=limit, page=page)
+    return {"deliveries": deliveries, "total": total, "page": page, "limit": limit}

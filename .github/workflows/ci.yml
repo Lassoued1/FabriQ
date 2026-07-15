@@ -42,7 +42,7 @@ jobs:
         env:
           FABRIQ_JWT_SECRET: ci-test-secret-not-for-prod
           FABRIQ_USERS: admin@fabriq.io:$2b$12$n8ydQnfhGorsB0pLo4Sbte0dpMjK3iByt8DdTSfy/nzhlW9tRmvKa:tenant_demo:admin
-        run: python -m pytest tests/test_agent.py -v --tb=short
+        run: python -m pytest tests --tb=short
 
   # ─── Frontend ───────────────────────────────────────────────────────────────
   frontend:

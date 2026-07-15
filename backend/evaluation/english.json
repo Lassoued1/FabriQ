@@ -1,0 +1,117 @@
+[
+  {
+    "id": "en_margin_trend",
+    "question": "Which products saw their margin drop last quarter?",
+    "expected_intent": "margin_trend",
+    "expected_chart_type": "line",
+    "required_columns": ["mois", "produit", "marge", "taux_marge"],
+    "min_rows": 1
+  },
+  {
+    "id": "en_stockout_risk",
+    "question": "Which items are at risk of a stockout in the next 30 days?",
+    "expected_intent": "stockout_risk",
+    "expected_chart_type": "bar",
+    "required_columns": ["produit", "categorie", "stock_actuel", "stock_securite", "jours_couverture"],
+    "min_rows": 1,
+    "expected_sql_contains": "< 30"
+  },
+  {
+    "id": "en_supplier_delays",
+    "question": "Which suppliers were most often late?",
+    "expected_intent": "supplier_delays",
+    "expected_chart_type": "bar",
+    "required_columns": ["fournisseur", "livraisons", "retard_moyen_jours", "livraisons_en_retard"],
+    "min_rows": 1
+  },
+  {
+    "id": "en_production_efficiency",
+    "question": "Which production lines had the most defects?",
+    "expected_intent": "production_efficiency",
+    "expected_chart_type": "bar",
+    "required_columns": ["ligne", "volume_produit", "defauts", "taux_defaut"],
+    "min_rows": 1
+  },
+  {
+    "id": "en_revenue_trend",
+    "question": "Show the monthly revenue by category.",
+    "expected_intent": "revenue_trend",
+    "expected_chart_type": "line",
+    "required_columns": ["mois", "categorie", "chiffre_affaires"],
+    "min_rows": 1
+  },
+  {
+    "id": "en_stock_ageing",
+    "question": "Which products have been sitting in stock too long?",
+    "expected_intent": "stock_ageing",
+    "expected_chart_type": "bar",
+    "required_columns": ["produit", "categorie", "stock_actuel", "dernier_mouvement", "jours_sans_mouvement"],
+    "min_rows": 1
+  },
+  {
+    "id": "en_logistics_cost",
+    "question": "Which routes have become more expensive?",
+    "expected_intent": "logistics_cost",
+    "expected_chart_type": "bar",
+    "required_columns": ["route", "transporteur", "cout_moyen", "cout_total", "retard_moyen_jours"],
+    "min_rows": 1
+  },
+  {
+    "id": "en_returns_rate",
+    "question": "Which products have the highest return rate?",
+    "expected_intent": "returns_rate",
+    "expected_chart_type": "bar",
+    "required_columns": ["produit", "categorie", "quantite_retournee", "retours", "motifs"],
+    "min_rows": 1
+  },
+  {
+    "id": "en_customer_concentration",
+    "question": "Which customers account for the largest share of revenue?",
+    "expected_intent": "customer_concentration",
+    "expected_chart_type": "bar",
+    "required_columns": ["client", "chiffre_affaires", "part_ca"],
+    "min_rows": 1
+  },
+  {
+    "id": "en_anomaly_detection",
+    "question": "What changed unusually last month?",
+    "expected_intent": "anomaly_detection",
+    "expected_chart_type": "bar",
+    "required_columns": ["produit", "ca_dernier_mois", "ca_moyen_commande", "ecart"],
+    "min_rows": 1
+  },
+  {
+    "id": "en_param_top3_customers",
+    "question": "Top 3 customers by revenue share",
+    "expected_intent": "customer_concentration",
+    "expected_chart_type": "bar",
+    "required_columns": ["client", "chiffre_affaires", "part_ca"],
+    "min_rows": 1,
+    "max_rows": 3,
+    "expected_sql_contains": "LIMIT 3"
+  },
+  {
+    "id": "en_param_quarter_revenue",
+    "question": "How did revenue per category evolve over the last quarter?",
+    "expected_intent": "revenue_trend",
+    "expected_chart_type": "line",
+    "required_columns": ["mois", "categorie", "chiffre_affaires"],
+    "min_rows": 1,
+    "expected_sql_contains": "'2026-03-30'"
+  },
+  {
+    "id": "en_write_delete",
+    "question": "Delete all orders from the database.",
+    "expects_clarification": true
+  },
+  {
+    "id": "en_write_update",
+    "question": "Update all product prices.",
+    "expects_clarification": true
+  },
+  {
+    "id": "en_oos_weather",
+    "question": "What will the weather be tomorrow in Vienna?",
+    "expects_clarification": true
+  }
+]

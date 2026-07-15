@@ -19,6 +19,7 @@ output/
 backend/logs/
 backend/reports/
 backend/data/
+backend/webhooks/
 *.log
 
 # Tooling

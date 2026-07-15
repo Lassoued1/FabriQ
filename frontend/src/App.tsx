@@ -28,6 +28,8 @@ import type {
   CatalogTab,
   CurrentUser,
   HealthResponse,
+  WebhookDelivery,
+  WebhookSubscription,
 } from './types'
 import { API_BASE, APP_VERSION, fallbackExamples } from './config'
 import { formatLlmStatus } from './format'
@@ -39,6 +41,7 @@ import { ResultTable } from './components/ResultTable'
 import { OrchestrationTimeline } from './components/OrchestrationTimeline'
 import { ValidationList } from './components/ValidationList'
 import { AlertsPanel } from './components/AlertsPanel'
+import { WebhooksPanel } from './components/WebhooksPanel'
 import { AdminPanel } from './components/AdminPanel'
 
 // ─── App ──────────────────────────────────────────────────────────────────────
@@ -73,6 +76,10 @@ function App() {
   const [alertEventsPage, setAlertEventsPage] = useState(1)
   // alertsError is surfaced via toast; kept as state for backward compat
   const [alertsError, setAlertsError] = useState<string | null>(null)
+  const [webhooks, setWebhooks] = useState<WebhookSubscription[]>([])
+  const [webhookEventTypes, setWebhookEventTypes] = useState<string[]>([])
+  const [webhookDeliveries, setWebhookDeliveries] = useState<Record<string, WebhookDelivery[]>>({})
+  const [webhooksError, setWebhooksError] = useState<string | null>(null)
   const bootstrapped = useRef(false)
   const [darkMode, setDarkMode] = useState<boolean>(
     () => localStorage.getItem('fabriq_dark') === '1'
@@ -194,6 +201,13 @@ function App() {
   useEffect(() => {
     if (!authToken) return
     void refreshAlerts()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authToken])
+
+  // Load webhooks + event types once per session
+  useEffect(() => {
+    if (!authToken) return
+    void refreshWebhooks()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authToken])
 
@@ -364,6 +378,88 @@ function App() {
       addToast('Alerte supprimée.', 'success')
     } catch {
       addToast("Impossible de supprimer l'alerte.", 'error')
+    }
+  }
+
+  async function refreshWebhooks() {
+    try {
+      const [hooksRes, typesRes] = await Promise.all([
+        fetch(`${API_BASE}/api/webhooks`, { headers: authHeaders() }),
+        fetch(`${API_BASE}/api/webhooks/event-types`, { headers: authHeaders() }),
+      ])
+      if (hooksRes.status === 401 || typesRes.status === 401) { handleUnauthorized(); return }
+      if (!hooksRes.ok || !typesRes.ok) throw new Error('webhooks-unavailable')
+      const { webhooks: hooks } = (await hooksRes.json()) as { webhooks: WebhookSubscription[] }
+      const { event_types } = (await typesRes.json()) as { event_types: string[] }
+      setWebhooks(hooks)
+      setWebhookEventTypes(event_types)
+      setWebhooksError(null)
+    } catch {
+      setWebhooksError('Webhooks indisponibles')
+    }
+  }
+
+  async function createWebhook(draft: { name: string; url: string; events: string[] }) {
+    try {
+      const res = await fetch(`${API_BASE}/api/webhooks`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(draft),
+      })
+      if (res.status === 401) { handleUnauthorized(); return }
+      if (!res.ok) {
+        const detail = res.status === 400
+          ? 'URL non autorisée (adresse interne ou schéma invalide).'
+          : "Impossible de créer le webhook."
+        addToast(detail, 'error')
+        return
+      }
+      await refreshWebhooks()
+      addToast('Webhook créé.', 'success')
+    } catch {
+      addToast('Impossible de créer le webhook.', 'error')
+    }
+  }
+
+  async function deleteWebhook(id: string) {
+    try {
+      const res = await fetch(`${API_BASE}/api/webhooks/${id}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+      })
+      if (res.status === 401) { handleUnauthorized(); return }
+      await refreshWebhooks()
+      addToast('Webhook supprimé.', 'success')
+    } catch {
+      addToast('Impossible de supprimer le webhook.', 'error')
+    }
+  }
+
+  async function testWebhook(id: string) {
+    try {
+      const res = await fetch(`${API_BASE}/api/webhooks/${id}/test`, {
+        method: 'POST',
+        headers: authHeaders(),
+      })
+      if (res.status === 401) { handleUnauthorized(); return }
+      if (!res.ok) { addToast('Échec de l’envoi du test.', 'error'); return }
+      const { delivered } = (await res.json()) as { delivered: boolean }
+      addToast(delivered ? 'Ping livré (2xx).' : 'Ping envoyé mais non livré.', delivered ? 'success' : 'error')
+      await loadWebhookDeliveries(id)
+    } catch {
+      addToast('Échec de l’envoi du test.', 'error')
+    }
+  }
+
+  async function loadWebhookDeliveries(id: string) {
+    try {
+      const res = await fetch(`${API_BASE}/api/webhooks/${id}/deliveries?limit=10`, { headers: authHeaders() })
+      if (res.status === 401) { handleUnauthorized(); return }
+      if (!res.ok) return
+      const { deliveries } = (await res.json()) as { deliveries: WebhookDelivery[] }
+      setWebhookDeliveries((prev) => ({ ...prev, [id]: deliveries }))
+    } catch {
+      /* non-critical */
     }
   }
 
@@ -546,6 +642,18 @@ function App() {
             onCreateAlert={(draft) => void createAlert(draft)}
             onExportEvents={() => void handleExportAlertsCsv()}
             onEventsPageChange={handleAlertEventsPageChange}
+          />
+
+          <WebhooksPanel
+            subscriptions={webhooks}
+            eventTypes={webhookEventTypes}
+            deliveries={webhookDeliveries}
+            error={webhooksError}
+            onRefresh={() => void refreshWebhooks()}
+            onCreate={(draft) => void createWebhook(draft)}
+            onDelete={(id) => void deleteWebhook(id)}
+            onTest={(id) => void testWebhook(id)}
+            onLoadDeliveries={(id) => void loadWebhookDeliveries(id)}
           />
 
           {currentUser?.role === 'admin' && (

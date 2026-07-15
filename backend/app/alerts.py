@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 
 from .database import ReadonlyDatabase
 from .semantic_layer import QueryParameters, intent_by_id, render_intent_sql
+from .webhooks import emit
 
 ALERTS_DIR = Path(__file__).resolve().parents[1] / "alerts"
 RULES_FILE = ALERTS_DIR / "rules.json"
@@ -257,6 +258,9 @@ def _fire_rule(rule: AlertRule, database: ReadonlyDatabase) -> None:
     if event is None:
         return
     append_event(event)
+    # Webhooks generiques : tout abonne au type `alert.fired` du tenant est notifie.
+    emit("alert.fired", rule.tenant_id, event.model_dump())
+    # Webhook par-regle (deprecie mais conserve pour retrocompatibilite).
     if rule.webhook_url:
         fire_webhook(rule.webhook_url, event)
     # Per-rule Slack webhook takes precedence; fall back to global env variable.
