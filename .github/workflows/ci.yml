@@ -114,6 +114,15 @@ jobs:
           FABRIQ_USERS: admin@fabriq.io:$2b$12$n8ydQnfhGorsB0pLo4Sbte0dpMjK3iByt8DdTSfy/nzhlW9tRmvKa:tenant_demo:admin
         run: uvicorn app.main:app --host 0.0.0.0 --port 8000 &
 
+      - name: Wait for backend
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8000/api/health && exit 0
+            sleep 1
+          done
+          echo "Backend did not become ready in time" >&2
+          exit 1
+
       - name: Run E2E tests
         working-directory: frontend
         env:
