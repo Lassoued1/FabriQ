@@ -31,7 +31,8 @@ import type {
   WebhookDelivery,
   WebhookSubscription,
 } from './types'
-import { API_BASE, APP_VERSION, fallbackExamples } from './config'
+import { API_BASE, APP_VERSION, examplesByLang, fallbackExamples, queryPanelStrings } from './config'
+import type { QueryLang } from './config'
 import { formatLlmStatus } from './format'
 import { LoginPage } from './components/LoginPage'
 import { SemanticCatalogPanel } from './components/SemanticCatalogPanel'
@@ -54,6 +55,7 @@ function App() {
 
   const [question, setQuestion] = useState(fallbackExamples[1])
   const [examples, setExamples] = useState(fallbackExamples)
+  const [queryLang, setQueryLang] = useState<QueryLang>('fr')
   const [result, setResult] = useState<AskResponse | null>(null)
   const [health, setHealth] = useState<HealthResponse | null>(null)
   const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([])
@@ -582,7 +584,20 @@ function App() {
         <aside className="query-panel">
           <div className="panel-heading">
             <MessageSquare size={18} />
-            <h2>Question</h2>
+            <h2>{queryPanelStrings[queryLang].heading}</h2>
+            <div className="lang-toggle" role="group" aria-label="Langue des questions">
+              {(['fr', 'en'] as QueryLang[]).map((code) => (
+                <button
+                  key={code}
+                  type="button"
+                  className={queryLang === code ? 'active' : undefined}
+                  aria-pressed={queryLang === code}
+                  onClick={() => setQueryLang(code)}
+                >
+                  {code.toUpperCase()}
+                </button>
+              ))}
+            </div>
           </div>
 
           <form onSubmit={handleSubmit} className="question-form">
@@ -590,16 +605,17 @@ function App() {
               value={question}
               onChange={(event) => setQuestion(event.target.value)}
               rows={6}
-              aria-label="Question en langage naturel"
+              aria-label={queryPanelStrings[queryLang].ariaLabel}
+              placeholder={queryPanelStrings[queryLang].placeholder}
             />
             <button type="submit" disabled={loading}>
               {loading ? <Loader2 className="spin" size={18} /> : <Send size={18} />}
-              Analyser
+              {loading ? queryPanelStrings[queryLang].analyzing : queryPanelStrings[queryLang].analyze}
             </button>
           </form>
 
           <div className="examples-list">
-            {examples.slice(0, 10).map((example) => (
+            {(queryLang === 'en' ? examplesByLang.en : examples).slice(0, 10).map((example) => (
               <button key={example} type="button" onClick={() => void ask(example)}>
                 {example}
               </button>
