@@ -7,7 +7,7 @@
 
 FabriQ is an analytics assistant for industrial SMEs: ask a question in natural language, get a safe SQL query, executed read-only, then a readable answer with table, chart, visible SQL, and an operational explanation.
 
-**Current version: v0.11.0** (v0.12.0 and v0.13.0 in progress, not yet tagged: English questions, generic outbound webhooks) — questions in French, German and English driving parameterized queries, AST-parser SQL guardrail, multi-user, multi-tenant, LangGraph orchestration, scheduled alerts, outbound webhooks, Prometheus/Grafana observability, CI and E2E tests.
+**Current version: v0.11.0** — natural-language questions driving parameterized queries, an SQL guardrail backed by a read-only database role, multi-user, multi-tenant, LangGraph orchestration, scheduled alerts, Prometheus/Grafana observability, CI and E2E tests.
 
 ![FabriQ demo](docs/assets/fabriq-v0.11.0-demo.gif)
 
@@ -19,45 +19,32 @@ FabriQ turns a business question into a validated SQL query, executes that query
 
 ## Design principles
 
-- **The LLM proposes, the code decides.** The optional local LLM (Ollama) only acts as an intent router, as a fallback to the deterministic router. It never generates SQL.
-- **No writes to the database, ever.** Dedicated PostgreSQL role `fabriq_readonly` + an application-level guardrail (SELECT only, table allowlist, blocked keywords, forced LIMIT, single statement only).
+- **The LLM proposes, the code decides.** The optional local LLM (Ollama) only acts as an intent router, as a fallback to the deterministic router. It never generates SQL directly.
+- **No writes to the database, ever.** A dedicated read-only PostgreSQL role, backed by an application-level validation layer. A successful prompt injection cannot write, because the role has no write permission.
 - **Everything is transparent.** The SQL, the orchestration trace, and the business explanation are visible in every response.
-- **Accuracy is measured by execution result**, not by SQL text similarity. 83 cases across four suites, all passing: golden 43/43, paraphrases 10/10, German 15/15, English 15/15.
+- **Accuracy is measured by execution result, not by SQL text similarity.** Two syntactically different queries can return the same correct result — a string comparison would have scored systematically wrong.
 
-## Features
+## Feature overview
 
-### Analytics core
+- **Analytics core** — natural-language questions, a hybrid deterministic/LLM-assisted router, a semantic layer covering 10 families of industrial questions (margin, stockouts, supplier delays, production, revenue, inventory, logistics, returns, customers, anomalies), and business-readable answers with tables and charts.
+- **Multi-user & security** — JWT authentication, multi-tenant data isolation, role-based access (admin/user), rate limiting.
+- **Alerts & observability** — scheduled alert rules with webhook/Slack/email notifications, a filterable audit log with CSV/Excel export, Prometheus metrics, and a provisioned Grafana dashboard.
+- **Quality** — a layered test suite and a dedicated evaluation harness, both running in CI on every push (see below).
 
-- React interface to ask a business question in French, German or English.
-- Hybrid router: deterministic keywords first, optional Ollama as fallback.
-- Semantic layer: 10 families of industrial questions (margin, stockouts, supplier delays, production, revenue, inventory, logistics, returns, customers, anomalies).
-- SQL generation via controlled templates, strict validation before execution.
-- Business-readable answer, table, chart adapted to the data shape, visible SQL.
-- Guided clarifications with clickable options when a question is ambiguous.
-- Exposed semantic catalog (`GET /api/catalog`), also visible in the UI.
+## Evaluation
 
-### Multi-user & security
+Correctness is measured against a purpose-built harness — **four suites, 83 cases, all passing**:
 
-- JWT authentication (login, automatic refresh, login page).
-- Multi-tenant: `tenant_id` propagated from the JWT down to SQL filtering and audit logging.
-- User roles (admin/user), admin panel (list, enable/disable accounts).
-- Rate limiting on login and analysis endpoints.
+| Suite | Result | Purpose |
+|---|---|---|
+| Golden | 43/43 | Curated reference questions with known-correct results. Baseline accuracy. |
+| Paraphrases | 10/10 | Same business questions, reworded. Robustness against phrasing variance. |
+| German | 15/15 | German-language questions against the same data. |
+| English | 15/15 | English-language questions against the same data. |
 
-### Alerts & observability
+Each report records, per case: the generated SQL, the detected intent, the row count, and the selected chart type — so a failure shows *why*, not just that it failed.
 
-- Scheduled alerts (APScheduler): CRUD rules, webhook, Slack, and SMTP email notifications.
-- Generic outbound webhooks: per-tenant subscriptions by event type (`question.answered`, `question.blocked`, `alert.fired`, `auth.login_failed`), HMAC-SHA256 signed delivery with retry backoff, SSRF guard, delivery log.
-- JSONL audit log with trace ID, paginated and filterable, CSV and Excel export.
-- PDF export of the analysis report on the frontend.
-- Prometheus `/metrics` endpoint, provisioned Grafana dashboard.
-- Frontend observability panel: API health, active database, LLM status, recent traces.
-
-### Quality
-
-- 107 backend tests (pytest), 9 frontend unit tests (Vitest), and 10 Playwright E2E tests.
-- GitHub Actions CI: backend (pytest + ruff), frontend (tsc + build), Docker smoke test, E2E.
-- Load testing with Locust.
-- Golden and paraphrase evaluation harness, compared by execution result.
+**Tests:** 107 backend tests (pytest), frontend unit tests (Vitest), and Playwright E2E suites (auth, analysis, observability). CI runs backend (pytest + ruff), frontend (tsc + build), a Docker smoke test, and E2E on every push. Load testing with Locust.
 
 ## Architecture
 
@@ -69,123 +56,45 @@ User
   -> FastAPI (rate limiting, multi-tenant)
   -> LangGraph graph (routing -> SQL template -> validation -> execution -> response)
   -> SQL guard + read-only PostgreSQL role
-  -> Response + chart + orchestration trace + JSONL audit
+  -> Response + chart + orchestration trace + audit log
   -> Prometheus / Grafana
 ```
 
 ## Quick start (Docker Compose)
 
 ```bash
+git clone https://github.com/Lassoued1/FabriQ.git
+cd FabriQ
 cp .env.example .env
-python scripts/init_env.py   # generates JWT secret and bcrypt users
 docker compose up -d
 ```
 
-Services: frontend `http://localhost:80`, API `http://localhost:8000`, Prometheus `http://localhost:9090`, Grafana `http://localhost:3000`.
+The frontend, API, and observability stack (Prometheus/Grafana) come up together. Interactive OpenAPI documentation is served at `/docs` on the running API.
 
-## Local development
+## Tech stack
 
-### 1. PostgreSQL
-
-```bash
-docker compose up -d postgres
-```
-
-The database exposes `localhost:5432` and automatically creates the read-only application role `fabriq_readonly`.
-
-### 2. Backend
-
-```bash
-cd backend
-python -m pip install -r requirements.txt
-$env:FABRIQ_DATABASE_URL="postgresql://fabriq_readonly:fabriq_readonly@127.0.0.1:5432/fabriq"
-python -m uvicorn app.main:app --reload --port 8000
-```
-
-### 3. Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Open `http://localhost:5173`.
-
-## Optional local LLM
-
-Default behavior stays fully deterministic and works without any LLM.
-
-```bash
-$env:FABRIQ_LLM_PROVIDER="ollama"
-$env:FABRIQ_OLLAMA_URL="http://127.0.0.1:11434"
-$env:FABRIQ_OLLAMA_MODEL="llama3.1"
-```
-
-LLM status is exposed in `/api/health` (non-blocking) and visible in the UI.
-
-## API
-
-| Group | Endpoints |
-| --- | --- |
-| Health | `GET /api/health`, `GET /metrics` |
-| Auth | `POST /api/auth/login`, `POST /api/auth/refresh`, `GET /api/auth/me` |
-| Analysis | `POST /api/ask` |
-| Catalog | `GET /api/catalog`, `GET /api/examples` |
-| Audit | `GET /api/audit/recent`, `GET /api/audit/export`, `GET /api/audit/export.xlsx` |
-| Alerts | `GET/POST /api/alerts`, `DELETE /api/alerts/{id}`, `GET /api/alerts/events`, `GET /api/alerts/events/export` |
-| Webhooks | `GET /api/webhooks/event-types`, `GET/POST /api/webhooks`, `DELETE /api/webhooks/{id}`, `POST /api/webhooks/{id}/test`, `GET /api/webhooks/{id}/deliveries` |
-| Admin | `GET /api/admin/users`, `POST /api/admin/users/{email}/disable`, `POST /api/admin/users/{email}/enable` |
-
-Interactive documentation: `http://localhost:8000/docs` (OpenAPI).
-
-## Evaluation
-
-```bash
-cd backend
-python scripts/evaluate.py --database=env
-python scripts/evaluate.py --database=env --suite=paraphrases
-python scripts/evaluate.py --database=env --suite=german
-python scripts/evaluate.py --database=env --suite=english
-```
-
-Reports are written to `backend/reports/`. Documentation: [docs/EVALUATION.md](docs/EVALUATION.md).
-
-## Tests
-
-```bash
-cd backend
-python -m pytest tests -q          # 107 backend tests
-
-cd frontend
-npm run build && npm run lint
-npx playwright test                # E2E
-```
-
-## Demo
-
-Demo scenario: [docs/DEMO.md](docs/DEMO.md).
-
-Recommended questions:
-
-- `Which suppliers were most frequently late?`
-- `Show monthly revenue by category.`
-- `Which SKUs are at risk of stockout in the next 30 days?`
-- `Welche Lieferanten waren am häufigsten verspätet?`
-- `Which products saw their margin drop last quarter?`
+| Layer | Technology |
+|---|---|
+| Frontend | React 19, Vite, TypeScript |
+| Backend | Python, FastAPI |
+| Orchestration | LangGraph |
+| Database | PostgreSQL (read-only application role), SQLite for local dev/test |
+| Observability | Prometheus, Grafana |
+| Containerization | Docker Compose |
+| CI | GitHub Actions (backend, frontend, Docker smoke test, E2E) |
 
 ## Explicit limitations
 
-- Users are declared via environment variables (no external SSO/OAuth2 yet).
-- Questions supported in French, German and English; the interface remains in French.
-- No PDF ingestion or document RAG, no fine-tuning.
-- Ollama remains optional and local.
 - The database is an industrial demo dataset, not a client database.
-- The SQL guardrail is application-level (AST parser via sqlglot, table allowlist, forced LIMIT, single statement, pre-flight EXPLAIN and query timeout) backed by the read-only role — a defense-in-depth layer on top of, not a replacement for, database-level access control.
+- No PDF ingestion or document RAG, no fine-tuning.
+- Ollama remains optional and local; the default behaviour is fully deterministic and works without any LLM.
+- The SQL guardrail is application-level (allowlist + validation) backed by the read-only role; a formal AST parser and EXPLAIN-based validation remain planned improvements.
+- Users are declared via environment variables (no external SSO/OAuth2 yet).
 
-## History & roadmap
+## Roadmap
 
-- Project notes (handoff, run, gotchas): [docs/PROJECT_NOTES.md](docs/PROJECT_NOTES.md)
-- Version history: [CHANGELOG.md](CHANGELOG.md)
-- Detailed roadmap: [docs/ROADMAP.md](docs/ROADMAP.md)
-- Original requirements document: [Cahier de charges.pdf](Cahier%20de%20charges.pdf)
+See [docs/ROADMAP.md](docs/ROADMAP.md) for planned improvements, and [CHANGELOG.md](CHANGELOG.md) for version history.
+
+---
+
+*Detailed operational documentation (full API reference, environment configuration, evaluation tooling) is maintained privately. Feel free to reach out if you'd like to discuss the implementation in more depth.*
