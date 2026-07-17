@@ -1,5 +1,6 @@
 import type { AskResponse } from '../types'
 import { formatCell } from '../format'
+import { useLang } from '../i18n'
 
 export function ResultTable({
   columns,
@@ -8,8 +9,9 @@ export function ResultTable({
   columns: string[]
   rows: AskResponse['rows']
 }) {
+  const { t } = useLang()
   if (!columns.length || !rows.length) {
-    return <div className="table-empty">Aucune ligne.</div>
+    return <div className="table-empty">{t.result.noRows}</div>
   }
 
   return (

@@ -31,8 +31,9 @@ import type {
   WebhookDelivery,
   WebhookSubscription,
 } from './types'
-import { API_BASE, APP_VERSION, examplesByLang, fallbackExamples, queryPanelStrings } from './config'
-import type { QueryLang } from './config'
+import { API_BASE, APP_VERSION, examplesByLang, fallbackExamples } from './config'
+import { useLang } from './i18n'
+import type { Lang } from './i18n'
 import { formatLlmStatus } from './format'
 import { LoginPage } from './components/LoginPage'
 import { SemanticCatalogPanel } from './components/SemanticCatalogPanel'
@@ -53,9 +54,9 @@ function App() {
   )
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
 
+  const { lang, setLang, t } = useLang()
   const [question, setQuestion] = useState(fallbackExamples[1])
   const [examples, setExamples] = useState(fallbackExamples)
-  const [queryLang, setQueryLang] = useState<QueryLang>('fr')
   const [result, setResult] = useState<AskResponse | null>(null)
   const [health, setHealth] = useState<HealthResponse | null>(null)
   const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([])
@@ -183,7 +184,7 @@ function App() {
       .catch(() => {
         setExamples(fallbackExamples)
         setCatalog(null)
-        setCatalogError('Catalogue indisponible')
+        setCatalogError(t.errors.catalog)
       })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authToken])
@@ -249,7 +250,7 @@ function App() {
 
       if (response.status === 401) { handleUnauthorized(); return }
       if (response.status === 429) {
-        addToast('Trop de requêtes — veuillez patienter quelques secondes.', 'error')
+        addToast(t.toasts.rateLimit, 'error')
         return
       }
       if (!response.ok) throw new Error(`HTTP ${response.status}`)
@@ -294,7 +295,7 @@ function App() {
     } catch {
       setHealth(null)
       setAuditEvents([])
-      setOpsError('API indisponible')
+      setOpsError(t.errors.api)
     } finally {
       setOpsLoading(false)
     }
@@ -328,7 +329,7 @@ function App() {
       setAlertEventsPage(payload.page ?? eventsPage)
       setAlertsError(null)
     } catch {
-      setAlertsError('Alertes indisponibles')
+      setAlertsError(t.errors.alerts)
     }
   }
 
@@ -345,11 +346,11 @@ function App() {
         headers: authHeaders(),
       })
       if (res.status === 401) { handleUnauthorized(); return }
-      if (!res.ok) { addToast(`Impossible de ${disable ? 'désactiver' : 'réactiver'} ${email}.`, 'error'); return }
+      if (!res.ok) { addToast(t.toasts.userToggleFail(email, disable), 'error'); return }
       setAdminUsers((prev) => prev.map((u) => u.email === email ? { ...u, disabled: disable } : u))
-      addToast(`${email} ${disable ? 'désactivé' : 'réactivé'}.`, 'success')
+      addToast(t.toasts.userToggled(email, disable), 'success')
     } catch {
-      addToast('Erreur réseau.', 'error')
+      addToast(t.toasts.networkError, 'error')
     }
   }
 
@@ -361,11 +362,11 @@ function App() {
         body: JSON.stringify(draft),
       })
       if (res.status === 401) { handleUnauthorized(); return }
-      if (!res.ok) { addToast("Impossible de créer l'alerte.", 'error'); return }
+      if (!res.ok) { addToast(t.toasts.alertCreateFail, 'error'); return }
       await refreshAlerts()
-      addToast('Alerte créée.', 'success')
+      addToast(t.toasts.alertCreated, 'success')
     } catch {
-      addToast("Impossible de créer l'alerte.", 'error')
+      addToast(t.toasts.alertCreateFail, 'error')
     }
   }
 
@@ -377,9 +378,9 @@ function App() {
       })
       if (res.status === 401) { handleUnauthorized(); return }
       await refreshAlerts()
-      addToast('Alerte supprimée.', 'success')
+      addToast(t.toasts.alertDeleted, 'success')
     } catch {
-      addToast("Impossible de supprimer l'alerte.", 'error')
+      addToast(t.toasts.alertDeleteFail, 'error')
     }
   }
 
@@ -397,7 +398,7 @@ function App() {
       setWebhookEventTypes(event_types)
       setWebhooksError(null)
     } catch {
-      setWebhooksError('Webhooks indisponibles')
+      setWebhooksError(t.errors.webhooks)
     }
   }
 
@@ -417,9 +418,9 @@ function App() {
         return
       }
       await refreshWebhooks()
-      addToast('Webhook créé.', 'success')
+      addToast(t.toasts.webhookCreated, 'success')
     } catch {
-      addToast('Impossible de créer le webhook.', 'error')
+      addToast(t.toasts.webhookCreateFail, 'error')
     }
   }
 
@@ -431,9 +432,9 @@ function App() {
       })
       if (res.status === 401) { handleUnauthorized(); return }
       await refreshWebhooks()
-      addToast('Webhook supprimé.', 'success')
+      addToast(t.toasts.webhookDeleted, 'success')
     } catch {
-      addToast('Impossible de supprimer le webhook.', 'error')
+      addToast(t.toasts.webhookDeleteFail, 'error')
     }
   }
 
@@ -444,12 +445,12 @@ function App() {
         headers: authHeaders(),
       })
       if (res.status === 401) { handleUnauthorized(); return }
-      if (!res.ok) { addToast('Échec de l’envoi du test.', 'error'); return }
+      if (!res.ok) { addToast(t.toasts.testFail, 'error'); return }
       const { delivered } = (await res.json()) as { delivered: boolean }
-      addToast(delivered ? 'Ping livré (2xx).' : 'Ping envoyé mais non livré.', delivered ? 'success' : 'error')
+      addToast(delivered ? t.toasts.pingDelivered : t.toasts.pingNotDelivered, delivered ? 'success' : 'error')
       await loadWebhookDeliveries(id)
     } catch {
-      addToast('Échec de l’envoi du test.', 'error')
+      addToast(t.toasts.testFail, 'error')
     }
   }
 
@@ -476,9 +477,9 @@ function App() {
       a.download = 'audit.xlsx'
       a.click()
       URL.revokeObjectURL(url)
-      addToast('Export Excel téléchargé.', 'success')
+      addToast(t.toasts.exportExcel, 'success')
     } catch {
-      addToast("Erreur lors de l'export Excel.", 'error')
+      addToast(t.toasts.exportExcelFail, 'error')
     }
   }
 
@@ -493,9 +494,9 @@ function App() {
       a.download = 'audit.csv'
       a.click()
       URL.revokeObjectURL(url)
-      addToast('Export audit téléchargé.', 'success')
+      addToast(t.toasts.exportAudit, 'success')
     } catch {
-      addToast('Erreur lors de l\'export.', 'error')
+      addToast(t.toasts.exportFail, 'error')
     }
   }
 
@@ -510,9 +511,9 @@ function App() {
       a.download = 'alert_events.csv'
       a.click()
       URL.revokeObjectURL(url)
-      addToast('Export alertes téléchargé.', 'success')
+      addToast(t.toasts.exportAlerts, 'success')
     } catch {
-      addToast("Erreur lors de l'export.", 'error')
+      addToast(t.toasts.exportFail, 'error')
     }
   }
 
@@ -533,7 +534,7 @@ function App() {
           <span className="brand-mark">FQ</span>
           <div>
             <h1>FabriQ</h1>
-            <p>Assistant NL - SQL industriel</p>
+            <p>{t.header.subtitle}</p>
           </div>
         </div>
         <div className="status-strip">
@@ -547,7 +548,7 @@ function App() {
           </span>
           <span>
             <ShieldCheck size={16} />
-            Read-only
+            {t.header.readonly}
           </span>
           <span>
             <Activity size={16} />
@@ -564,7 +565,7 @@ function App() {
             type="button"
             className="dark-toggle"
             onClick={() => setDarkMode((d) => !d)}
-            title={darkMode ? 'Passer en mode clair' : 'Passer en mode sombre'}
+            title={darkMode ? t.header.toLight : t.header.toDark}
             aria-pressed={darkMode}
           >
             {darkMode ? '☀️' : '🌙'}
@@ -573,7 +574,7 @@ function App() {
             type="button"
             className="logout-btn"
             onClick={handleLogout}
-            title="Se déconnecter"
+            title={t.header.logout}
           >
             <LogOut size={16} />
           </button>
@@ -584,15 +585,15 @@ function App() {
         <aside className="query-panel">
           <div className="panel-heading">
             <MessageSquare size={18} />
-            <h2>{queryPanelStrings[queryLang].heading}</h2>
-            <div className="lang-toggle" role="group" aria-label="Langue des questions">
-              {(['fr', 'en'] as QueryLang[]).map((code) => (
+            <h2>{t.query.heading}</h2>
+            <div className="lang-toggle" role="group" aria-label={t.header.langAria}>
+              {(['fr', 'en'] as Lang[]).map((code) => (
                 <button
                   key={code}
                   type="button"
-                  className={queryLang === code ? 'active' : undefined}
-                  aria-pressed={queryLang === code}
-                  onClick={() => setQueryLang(code)}
+                  className={lang === code ? 'active' : undefined}
+                  aria-pressed={lang === code}
+                  onClick={() => setLang(code)}
                 >
                   {code.toUpperCase()}
                 </button>
@@ -605,17 +606,17 @@ function App() {
               value={question}
               onChange={(event) => setQuestion(event.target.value)}
               rows={6}
-              aria-label={queryPanelStrings[queryLang].ariaLabel}
-              placeholder={queryPanelStrings[queryLang].placeholder}
+              aria-label={t.query.ariaLabel}
+              placeholder={t.query.placeholder}
             />
             <button type="submit" disabled={loading}>
               {loading ? <Loader2 className="spin" size={18} /> : <Send size={18} />}
-              {loading ? queryPanelStrings[queryLang].analyzing : queryPanelStrings[queryLang].analyze}
+              {loading ? t.query.analyzing : t.query.analyze}
             </button>
           </form>
 
           <div className="examples-list">
-            {(queryLang === 'en' ? examplesByLang.en : examples).slice(0, 10).map((example) => (
+            {(lang === 'en' ? examplesByLang.en : examples).slice(0, 10).map((example) => (
               <button key={example} type="button" onClick={() => void ask(example)}>
                 {example}
               </button>
@@ -681,15 +682,15 @@ function App() {
           <div className="metric-row">
             <div className="metric">
               <Activity size={18} />
-              <span>{result?.intent ?? 'En attente'}</span>
+              <span>{result?.intent ?? t.result.pending}</span>
             </div>
             <div className={result?.validation.ok ? 'metric ok' : 'metric'}>
               {result?.validation.ok ? <ShieldCheck size={18} /> : <AlertTriangle size={18} />}
-              <span>{result?.validation.ok ? 'SQL valide' : 'Validation'}</span>
+              <span>{result?.validation.ok ? t.result.sqlValid : t.result.validation}</span>
             </div>
             <div className="metric">
               <Table2 size={18} />
-              <span>{result ? `${result.rows.length} lignes` : '0 ligne'}</span>
+              <span>{result ? `${result.rows.length} ${t.result.rows}` : t.result.rowsZero}</span>
             </div>
             <div className="metric">
               <Activity size={18} />
@@ -702,7 +703,7 @@ function App() {
           {!result && !error && (
             <div className="empty-state">
               <BarChart3 size={42} />
-              <p>Pose une question industrielle pour lancer la boucle FabriQ.</p>
+              <p>{t.result.emptyState}</p>
             </div>
           )}
 
@@ -713,14 +714,14 @@ function App() {
                   type="button"
                   className="export-pdf-btn"
                   onClick={() => window.print()}
-                  title="Exporter l'analyse en PDF"
+                  title={t.result.exportPdfTitle}
                 >
-                  Exporter PDF
+                  {t.result.exportPdf}
                 </button>
               </div>
 
               <section className="answer-block">
-                <h2>Reponse</h2>
+                <h2>{t.result.answer}</h2>
                 <p>{result.answer}</p>
                 {result.needs_clarification && result.clarification && (
                   <div className="notice">{result.clarification}</div>
@@ -747,7 +748,7 @@ function App() {
               <section className="orchestration-block">
                 <div className="section-title">
                   <Activity size={18} />
-                  <h2>Pipeline</h2>
+                  <h2>{t.result.pipeline}</h2>
                 </div>
                 <OrchestrationTimeline steps={result.orchestration} />
               </section>
@@ -755,7 +756,7 @@ function App() {
               <section className="chart-block">
                 <div className="section-title">
                   <BarChart3 size={18} />
-                  <h2>{result.chart?.title ?? 'Graphique'}</h2>
+                  <h2>{result.chart?.title ?? t.result.chart}</h2>
                 </div>
                 <ResultChart result={result} data={visibleRows} />
               </section>
@@ -763,7 +764,7 @@ function App() {
               <section className="table-block">
                 <div className="section-title">
                   <Table2 size={18} />
-                  <h2>Resultats</h2>
+                  <h2>{t.result.results}</h2>
                 </div>
                 <ResultTable columns={result.columns} rows={visibleRows} />
               </section>
@@ -773,7 +774,7 @@ function App() {
                   <Terminal size={18} />
                   <h2>SQL</h2>
                 </div>
-                <pre>{result.sql ?? 'Aucune requete generee.'}</pre>
+                <pre>{result.sql ?? t.result.noQuery}</pre>
                 {result.trace_id && <p className="trace-id">Trace: {result.trace_id}</p>}
                 <ValidationList validation={result.validation} />
               </section>

@@ -10,6 +10,7 @@ import {
   YAxis,
 } from 'recharts'
 import type { AskResponse } from '../types'
+import { useLang } from '../i18n'
 
 export function ResultChart({
   result,
@@ -18,8 +19,9 @@ export function ResultChart({
   result: AskResponse
   data: AskResponse['rows']
 }) {
+  const { t } = useLang()
   if (!result.chart || data.length === 0) {
-    return <div className="chart-empty">Aucune donnee graphique.</div>
+    return <div className="chart-empty">{t.result.noChart}</div>
   }
 
   const chartProps = {

@@ -8,41 +8,13 @@ export const fallbackExamples = [
   'Quels SKU risquent une rupture dans les 30 prochains jours ?',
 ]
 
-// ─── i18n du panneau Question (partie gauche) ──────────────────────────────────
-// Le backend comprend les questions en francais et en anglais ; ce selecteur
-// bascule les libelles et les exemples affiches. Il ne traduit pas la reponse,
-// qui reste dans la langue de la question posee.
-export type QueryLang = 'fr' | 'en'
-
-export const queryPanelStrings: Record<QueryLang, {
-  heading: string
-  ariaLabel: string
-  placeholder: string
-  analyze: string
-  analyzing: string
-  examplesTitle: string
-}> = {
-  fr: {
-    heading: 'Question',
-    ariaLabel: 'Question en langage naturel',
-    placeholder: 'Posez une question metier en francais…',
-    analyze: 'Analyser',
-    analyzing: 'Analyse…',
-    examplesTitle: 'Exemples',
-  },
-  en: {
-    heading: 'Question',
-    ariaLabel: 'Natural-language question',
-    placeholder: 'Ask a business question in English…',
-    analyze: 'Analyze',
-    analyzing: 'Analyzing…',
-    examplesTitle: 'Examples',
-  },
-}
-
+// ─── Exemples de questions par langue ──────────────────────────────────────────
+// Le backend comprend les questions en francais et en anglais ; le selecteur de
+// langue (voir i18n.tsx) bascule les libelles ET les exemples affiches. La
+// reponse, elle, reste dans la langue de la question posee.
 // Exemples verifies (un par intention) — issus des suites d'evaluation,
 // garantis de router correctement.
-export const examplesByLang: Record<QueryLang, string[]> = {
+export const examplesByLang: Record<'fr' | 'en', string[]> = {
   fr: fallbackExamples,
   en: [
     'Which products saw their margin drop last quarter?',

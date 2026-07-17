@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { Bell, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import type { AlertEvent, AlertRule } from '../types'
 import { formatTime } from '../format'
+import { useLang } from '../i18n'
 
 export function AlertsPanel({
   rules,
@@ -37,13 +38,14 @@ export function AlertsPanel({
   const [formWebhook, setFormWebhook] = useState('')
   const [formSlack, setFormSlack] = useState('')
   const [formEmail, setFormEmail] = useState('')
+  const { t } = useLang()
 
   const INTENT_OPTIONS = [
-    { id: 'supplier_delays', label: 'Retards fournisseurs', column: 'avg_delay_days' },
-    { id: 'stockout_risk', label: 'Risque rupture', column: 'days_of_coverage' },
-    { id: 'margin_trend', label: 'Tendance marge', column: 'margin' },
-    { id: 'returns_rate', label: 'Taux retours', column: 'return_rate_pct' },
-    { id: 'anomaly_detection', label: 'Anomalie stock', column: 'variance_from_avg' },
+    { id: 'supplier_delays', label: t.alerts.intents.supplier_delays, column: 'avg_delay_days' },
+    { id: 'stockout_risk', label: t.alerts.intents.stockout_risk, column: 'days_of_coverage' },
+    { id: 'margin_trend', label: t.alerts.intents.margin_trend, column: 'margin' },
+    { id: 'returns_rate', label: t.alerts.intents.returns_rate, column: 'return_rate_pct' },
+    { id: 'anomaly_detection', label: t.alerts.intents.anomaly_detection, column: 'variance_from_avg' },
   ]
 
   function handleCreate(e: FormEvent) {
@@ -72,14 +74,14 @@ export function AlertsPanel({
     <section className="alerts-panel">
       <div className="panel-heading compact">
         <Bell size={18} />
-        <h2>Alertes</h2>
-        <button type="button" onClick={onRefresh} aria-label="Rafraichir">
+        <h2>{t.alerts.heading}</h2>
+        <button type="button" onClick={onRefresh} aria-label={t.alerts.refresh}>
           <RefreshCw size={16} />
         </button>
-        <button type="button" onClick={onExportEvents} className="export-btn" title="Exporter evenements CSV">
+        <button type="button" onClick={onExportEvents} className="export-btn" title={t.alerts.exportCsv}>
           CSV ↓
         </button>
-        <button type="button" onClick={() => setShowForm((v) => !v)} aria-label="Nouvelle alerte">
+        <button type="button" onClick={() => setShowForm((v) => !v)} aria-label={t.alerts.newAlert}>
           <Plus size={16} />
         </button>
       </div>
@@ -89,7 +91,7 @@ export function AlertsPanel({
       {showForm && (
         <form className="alert-form" onSubmit={handleCreate}>
           <input
-            placeholder="Nom de l'alerte"
+            placeholder={t.alerts.name}
             value={formName}
             onChange={(e) => setFormName(e.target.value)}
             required
@@ -108,10 +110,10 @@ export function AlertsPanel({
           </select>
           <div className="alert-form-row">
             <select value={formOp} onChange={(e) => setFormOp(e.target.value as AlertRule['operator'])}>
-              <option value="gt">&gt; supérieur à</option>
-              <option value="lt">&lt; inférieur à</option>
-              <option value="gte">≥ supérieur ou égal</option>
-              <option value="lte">≤ inférieur ou égal</option>
+              <option value="gt">{t.alerts.opGt}</option>
+              <option value="lt">{t.alerts.opLt}</option>
+              <option value="gte">{t.alerts.opGte}</option>
+              <option value="lte">{t.alerts.opLte}</option>
             </select>
             <input
               type="number"
@@ -121,42 +123,42 @@ export function AlertsPanel({
             />
           </div>
           <input
-            placeholder="Cron (ex: 0 8 * * *)"
+            placeholder={t.alerts.cronPh}
             value={formCron}
             onChange={(e) => setFormCron(e.target.value)}
           />
           <input
-            placeholder="Webhook URL (optionnel)"
+            placeholder={t.alerts.webhookPh}
             type="url"
             value={formWebhook}
             onChange={(e) => setFormWebhook(e.target.value)}
           />
           <input
-            placeholder="Slack Webhook URL (optionnel)"
+            placeholder={t.alerts.slackPh}
             type="url"
             value={formSlack}
             onChange={(e) => setFormSlack(e.target.value)}
           />
           <input
-            placeholder="Emails destinataires (optionnel, séparés par virgule)"
+            placeholder={t.alerts.emailPh}
             type="text"
             value={formEmail}
             onChange={(e) => setFormEmail(e.target.value)}
           />
-          <button type="submit">Créer</button>
+          <button type="submit">{t.alerts.create}</button>
         </form>
       )}
 
       <div className="alert-rules-list">
         {rules.length === 0 && !error && (
-          <div className="audit-empty">Aucune règle. Cliquez sur + pour en créer une.</div>
+          <div className="audit-empty">{t.alerts.noRules}</div>
         )}
         {rules.map((rule) => (
           <article key={rule.id} className="alert-rule-item">
             <div className="alert-rule-header">
               <span className={rule.enabled ? 'audit-dot ok' : 'audit-dot'} />
               <strong>{rule.name}</strong>
-              <button type="button" onClick={() => onDelete(rule.id)} title="Supprimer">
+              <button type="button" onClick={() => onDelete(rule.id)} title={t.alerts.delete}>
                 <Trash2 size={13} />
               </button>
             </div>
@@ -169,14 +171,14 @@ export function AlertsPanel({
       </div>
 
       <div className="alert-events-list">
-        <p className="alert-events-title">Declenchements ({eventsTotal})</p>
+        <p className="alert-events-title">{t.alerts.triggers} ({eventsTotal})</p>
         {events.length === 0 && (
-          <div className="audit-empty">Aucun evenement.</div>
+          <div className="audit-empty">{t.alerts.noEvents}</div>
         )}
         {events.map((ev, i) => (
           <article key={`${ev.rule_id}-${i}`} className="alert-event-item">
             <strong>{ev.rule_name}</strong>
-            <span>valeur: {ev.triggered_value.toFixed(2)}</span>
+            <span>{t.alerts.value}: {ev.triggered_value.toFixed(2)}</span>
             <span>{formatTime(ev.fired_at)}</span>
           </article>
         ))}

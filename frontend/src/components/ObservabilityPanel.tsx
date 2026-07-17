@@ -1,20 +1,21 @@
 import { Activity, Clock3, Database, RefreshCw, Server } from 'lucide-react'
 import type { AuditEvent, HealthResponse } from '../types'
 import { formatLlmLatency, formatLlmStatus, formatTime, llmPillClass } from '../format'
+import { useLang } from '../i18n'
 
-const AUDIT_INTENTS = [
-  { id: '', label: 'Toutes intentions' },
-  { id: 'margin_trend', label: 'Tendance marge' },
-  { id: 'stockout_risk', label: 'Rupture stock' },
-  { id: 'supplier_delays', label: 'Retards fournisseur' },
-  { id: 'production_efficiency', label: 'Efficacite prod.' },
-  { id: 'revenue_trend', label: 'Tendance CA' },
-  { id: 'stock_aging', label: 'Vieillissement stock' },
-  { id: 'logistics_cost', label: 'Cout logistique' },
-  { id: 'returns_rate', label: 'Retours' },
-  { id: 'customer_concentration', label: 'Clients' },
-  { id: 'anomaly_detection', label: 'Anomalie' },
-]
+const AUDIT_INTENT_IDS = [
+  '',
+  'margin_trend',
+  'stockout_risk',
+  'supplier_delays',
+  'production_efficiency',
+  'revenue_trend',
+  'stock_aging',
+  'logistics_cost',
+  'returns_rate',
+  'customer_concentration',
+  'anomaly_detection',
+] as const
 
 export function ObservabilityPanel({
   events,
@@ -47,21 +48,24 @@ export function ObservabilityPanel({
   filterStatus: '' | 'ok' | 'failed'
   onFilterChange: (intent: string, status: '' | 'ok' | 'failed') => void
 }) {
+  const { t } = useLang()
   const latest = events[0]
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const intentLabel = (id: string) =>
+    id === '' ? t.obs.intents.all : (t.obs.intents as Record<string, string>)[id] ?? id
 
   return (
     <section className="observability-panel">
       <div className="panel-heading compact">
         <Activity size={18} />
-        <h2>Observabilite</h2>
-        <button type="button" onClick={onRefresh} aria-label="Rafraichir">
+        <h2>{t.obs.heading}</h2>
+        <button type="button" onClick={onRefresh} aria-label={t.obs.refresh}>
           <RefreshCw className={loading ? 'spin' : undefined} size={16} />
         </button>
-        <button type="button" onClick={onExportCsv} className="export-btn" title="Exporter en CSV">
+        <button type="button" onClick={onExportCsv} className="export-btn" title={t.obs.exportCsv}>
           CSV ↓
         </button>
-        <button type="button" onClick={onExportXlsx} className="export-btn" title="Exporter en Excel">
+        <button type="button" onClick={onExportXlsx} className="export-btn" title={t.obs.exportXlsx}>
           XLSX ↓
         </button>
       </div>
@@ -73,7 +77,7 @@ export function ObservabilityPanel({
         </div>
         <div className="ops-pill">
           <Database size={15} />
-          {health?.database ?? 'inconnue'}
+          {health?.database ?? t.obs.unknown}
         </div>
         <div className={llmPillClass(health)} title={health?.llm_error ?? undefined}>
           <Activity size={15} />
@@ -89,20 +93,20 @@ export function ObservabilityPanel({
         <select
           value={filterIntent}
           onChange={(e) => onFilterChange(e.target.value, filterStatus)}
-          aria-label="Filtrer par intention"
+          aria-label={t.obs.filterIntent}
         >
-          {AUDIT_INTENTS.map((opt) => (
-            <option key={opt.id} value={opt.id}>{opt.label}</option>
+          {AUDIT_INTENT_IDS.map((id) => (
+            <option key={id} value={id}>{intentLabel(id)}</option>
           ))}
         </select>
         <select
           value={filterStatus}
           onChange={(e) => onFilterChange(filterIntent, e.target.value as '' | 'ok' | 'failed')}
-          aria-label="Filtrer par statut"
+          aria-label={t.obs.filterStatus}
         >
-          <option value="">Tous statuts</option>
-          <option value="ok">Valides</option>
-          <option value="failed">Bloques</option>
+          <option value="">{t.obs.allStatuses}</option>
+          <option value="ok">{t.obs.valid}</option>
+          <option value="failed">{t.obs.blocked}</option>
         </select>
       </div>
 
@@ -110,7 +114,7 @@ export function ObservabilityPanel({
 
       {latest && (
         <div className="latest-trace">
-          <span>Derniere trace</span>
+          <span>{t.obs.latestTrace}</span>
           <strong>{latest.trace_id}</strong>
         </div>
       )}
@@ -128,11 +132,11 @@ export function ObservabilityPanel({
                 <Clock3 size={13} />
                 {formatTime(event.created_at)}
               </span>
-              <span>{event.row_count} lignes</span>
+              <span>{event.row_count} {t.obs.rows}</span>
             </footer>
           </article>
         ))}
-        {!events.length && !error && <div className="audit-empty">Aucune trace recente.</div>}
+        {!events.length && !error && <div className="audit-empty">{t.obs.noTrace}</div>}
       </div>
 
       {totalPages > 1 && (

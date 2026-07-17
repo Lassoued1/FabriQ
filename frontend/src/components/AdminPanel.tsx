@@ -1,5 +1,6 @@
 import { User } from 'lucide-react'
 import type { AdminUser } from '../types'
+import { useLang } from '../i18n'
 
 export function AdminPanel({
   users,
@@ -8,21 +9,22 @@ export function AdminPanel({
   users: AdminUser[]
   onToggleUser: (email: string, disable: boolean) => void
 }) {
+  const { t } = useLang()
   return (
     <section className="admin-panel">
       <div className="panel-heading compact">
         <User size={18} />
-        <h2>Utilisateurs ({users.length})</h2>
+        <h2>{t.admin.heading} ({users.length})</h2>
       </div>
       {users.length === 0 ? (
-        <div className="audit-empty">Aucun utilisateur charge.</div>
+        <div className="audit-empty">{t.admin.none}</div>
       ) : (
         <table className="admin-table">
           <thead>
             <tr>
-              <th>Email</th>
-              <th>Tenant</th>
-              <th>Role</th>
+              <th>{t.admin.email}</th>
+              <th>{t.admin.tenant}</th>
+              <th>{t.admin.role}</th>
               <th></th>
             </tr>
           </thead>
@@ -37,9 +39,9 @@ export function AdminPanel({
                     type="button"
                     className={u.disabled ? 'admin-toggle-btn enable' : 'admin-toggle-btn disable'}
                     onClick={() => onToggleUser(u.email, !u.disabled)}
-                    title={u.disabled ? 'Réactiver' : 'Désactiver'}
+                    title={u.disabled ? t.admin.reactivate : t.admin.deactivate}
                   >
-                    {u.disabled ? 'Activer' : 'Désactiver'}
+                    {u.disabled ? t.admin.enable : t.admin.disable}
                   </button>
                 </td>
               </tr>

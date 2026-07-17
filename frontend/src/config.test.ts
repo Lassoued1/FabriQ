@@ -1,15 +1,20 @@
 import { describe, expect, it } from 'vitest'
-import { examplesByLang, queryPanelStrings } from './config'
+import { examplesByLang } from './config'
+import { translations } from './i18n'
 
-describe('i18n du panneau Question', () => {
-  it('expose les libelles pour le francais et l anglais', () => {
-    for (const lang of ['fr', 'en'] as const) {
-      const s = queryPanelStrings[lang]
-      expect(s.heading).toBeTruthy()
-      expect(s.analyze).toBeTruthy()
-      expect(s.placeholder).toBeTruthy()
-      expect(s.examplesTitle).toBeTruthy()
-    }
+describe('i18n', () => {
+  it('couvre le francais et l anglais avec la meme forme', () => {
+    const keys = (o: object): string[] =>
+      Object.entries(o).flatMap(([k, v]) =>
+        v && typeof v === 'object' ? Object.keys(v).map((sub) => `${k}.${sub}`) : [k],
+      )
+    expect(keys(translations.en)).toEqual(keys(translations.fr))
+  })
+
+  it('traduit reellement (les libelles anglais different du francais)', () => {
+    expect(translations.en.result.answer).not.toBe(translations.fr.result.answer)
+    expect(translations.en.obs.heading).not.toBe(translations.fr.obs.heading)
+    expect(translations.en.alerts.create).toBe('Create')
   })
 
   it('propose des exemples dans les deux langues', () => {

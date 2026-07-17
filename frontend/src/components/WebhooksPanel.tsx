@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { Webhook, Plus, RefreshCw, Trash2, Send } from 'lucide-react'
 import type { WebhookDelivery, WebhookSubscription } from '../types'
 import { formatTime } from '../format'
+import { useLang } from '../i18n'
 
 export function WebhooksPanel({
   subscriptions,
@@ -30,6 +31,7 @@ export function WebhooksPanel({
   const [formUrl, setFormUrl] = useState('')
   const [formEvents, setFormEvents] = useState<string[]>([])
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const { t } = useLang()
 
   function toggleEvent(type: string) {
     setFormEvents((prev) =>
@@ -60,11 +62,11 @@ export function WebhooksPanel({
     <section className="alerts-panel">
       <div className="panel-heading compact">
         <Webhook size={18} />
-        <h2>Webhooks</h2>
-        <button type="button" onClick={onRefresh} aria-label="Rafraichir">
+        <h2>{t.webhooks.heading}</h2>
+        <button type="button" onClick={onRefresh} aria-label={t.webhooks.refresh}>
           <RefreshCw size={16} />
         </button>
-        <button type="button" onClick={() => setShowForm((v) => !v)} aria-label="Nouveau webhook">
+        <button type="button" onClick={() => setShowForm((v) => !v)} aria-label={t.webhooks.newWebhook}>
           <Plus size={16} />
         </button>
       </div>
@@ -74,20 +76,20 @@ export function WebhooksPanel({
       {showForm && (
         <form className="alert-form" onSubmit={handleCreate}>
           <input
-            placeholder="Nom du webhook"
+            placeholder={t.webhooks.name}
             value={formName}
             onChange={(e) => setFormName(e.target.value)}
             required
           />
           <input
-            placeholder="URL (https://...)"
+            placeholder={t.webhooks.url}
             type="url"
             value={formUrl}
             onChange={(e) => setFormUrl(e.target.value)}
             required
           />
           <fieldset className="webhook-events-fieldset">
-            <legend>Événements</legend>
+            <legend>{t.webhooks.events}</legend>
             {eventTypes.map((type) => (
               <label key={type} className="webhook-event-check">
                 <input
@@ -99,23 +101,23 @@ export function WebhooksPanel({
               </label>
             ))}
           </fieldset>
-          <button type="submit" disabled={formEvents.length === 0}>Créer</button>
+          <button type="submit" disabled={formEvents.length === 0}>{t.webhooks.create}</button>
         </form>
       )}
 
       <div className="alert-rules-list">
         {subscriptions.length === 0 && !error && (
-          <div className="audit-empty">Aucun webhook. Cliquez sur + pour en créer un.</div>
+          <div className="audit-empty">{t.webhooks.noWebhooks}</div>
         )}
         {subscriptions.map((hook) => (
           <article key={hook.id} className="alert-rule-item">
             <div className="alert-rule-header">
               <span className={hook.enabled ? 'audit-dot ok' : 'audit-dot'} />
               <strong>{hook.name}</strong>
-              <button type="button" onClick={() => onTest(hook.id)} title="Envoyer un ping de test">
+              <button type="button" onClick={() => onTest(hook.id)} title={t.webhooks.testPing}>
                 <Send size={13} />
               </button>
-              <button type="button" onClick={() => onDelete(hook.id)} title="Supprimer">
+              <button type="button" onClick={() => onDelete(hook.id)} title={t.webhooks.delete}>
                 <Trash2 size={13} />
               </button>
             </div>
@@ -126,12 +128,12 @@ export function WebhooksPanel({
               className="webhook-deliveries-toggle"
               onClick={() => toggleDeliveries(hook.id)}
             >
-              {expandedId === hook.id ? '▾' : '▸'} Livraisons
+              {expandedId === hook.id ? '▾' : '▸'} {t.webhooks.deliveries}
             </button>
             {expandedId === hook.id && (
               <div className="webhook-deliveries">
                 {(deliveries[hook.id] ?? []).length === 0 && (
-                  <div className="audit-empty">Aucune livraison.</div>
+                  <div className="audit-empty">{t.webhooks.noDeliveries}</div>
                 )}
                 {(deliveries[hook.id] ?? []).map((d, i) => (
                   <div key={`${d.event_id}-${d.attempt}-${i}`} className="webhook-delivery-item">

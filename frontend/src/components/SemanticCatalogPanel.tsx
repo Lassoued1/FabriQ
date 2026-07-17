@@ -1,5 +1,6 @@
 import { Layers3 } from 'lucide-react'
 import type { CatalogResponse, CatalogTab } from '../types'
+import { useLang } from '../i18n'
 
 export function SemanticCatalogPanel({
   catalog,
@@ -14,32 +15,33 @@ export function SemanticCatalogPanel({
   onSelectTab: (tab: CatalogTab) => void
   onAsk: (question: string) => void
 }) {
+  const { t } = useLang()
   return (
     <section className="catalog-panel">
       <div className="panel-heading compact">
         <Layers3 size={18} />
-        <h2>Catalogue</h2>
+        <h2>{t.catalog.heading}</h2>
       </div>
 
-      <div className="catalog-tabs" role="tablist" aria-label="Catalogue semantique">
+      <div className="catalog-tabs" role="tablist" aria-label={t.catalog.aria}>
         <button
           type="button"
           className={activeTab === 'intents' ? 'active' : undefined}
           onClick={() => onSelectTab('intents')}
         >
-          Intentions
+          {t.catalog.intents}
         </button>
         <button
           type="button"
           className={activeTab === 'tables' ? 'active' : undefined}
           onClick={() => onSelectTab('tables')}
         >
-          Tables
+          {t.catalog.tables}
         </button>
       </div>
 
       {error && <div className="ops-error">{error}</div>}
-      {!catalog && !error && <div className="catalog-empty">Chargement...</div>}
+      {!catalog && !error && <div className="catalog-empty">{t.catalog.loading}</div>}
 
       {catalog && activeTab === 'intents' && (
         <div className="catalog-list">
@@ -69,7 +71,7 @@ export function SemanticCatalogPanel({
             <article key={table.name} className="catalog-item">
               <div className="catalog-item-title">
                 <strong>{table.label}</strong>
-                <span>{table.columns.length} colonnes</span>
+                <span>{table.columns.length} {t.catalog.columns}</span>
               </div>
               <p>{table.description}</p>
               <div className="column-list">
