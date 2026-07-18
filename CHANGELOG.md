@@ -2,6 +2,15 @@
 
 Historique des versions de FabriQ. Le detail complet de chaque jalon est dans [docs/ROADMAP.md](docs/ROADMAP.md).
 
+## v0.15.0 — en cours (non taguee)
+
+- **Page de login trilingue** : dernier ecran encore monolingue, desormais
+  traduit FR/EN/DE via `i18n.tsx` (labels email/mot de passe, boutons, sous-titre,
+  erreurs d'authentification, bloc SSO) avec son propre selecteur de langue.
+- **Langue persistee** : le choix de langue est memorise dans `localStorage`
+  (`fabriq_lang`) — il survit au rechargement et se propage de la page de login
+  vers l'application. Auparavant l'UI repartait en francais a chaque chargement.
+
 ## v0.14.0 — 18 juillet 2026
 
 - **SSO OIDC optionnel (Keycloak ou tout fournisseur OpenID Connect)** : flux

@@ -3,17 +3,15 @@ import type { FormEvent } from 'react'
 import { KeyRound, Loader2 } from 'lucide-react'
 import { API_BASE } from '../config'
 import type { CurrentUser } from '../types'
-
-const SSO_ERROR_MESSAGES: Record<string, string> = {
-  disabled: 'Ce compte SSO est désactivé.',
-  oidc_failed: 'La connexion SSO a échoué. Réessayez.',
-}
+import { useLang } from '../i18n'
+import type { Lang } from '../i18n'
 
 export function LoginPage({
   onLogin,
 }: {
   onLogin: (token: string, user: CurrentUser) => void
 }) {
+  const { lang, setLang, t } = useLang()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -32,8 +30,10 @@ export function LoginPage({
   useEffect(() => {
     const match = window.location.hash.match(/sso_error=([^&]+)/)
     if (!match) return
-    setError(SSO_ERROR_MESSAGES[match[1]] ?? 'La connexion SSO a échoué.')
+    setError(match[1] === 'disabled' ? t.login.ssoDisabled : t.login.ssoFailed)
     history.replaceState(null, '', window.location.pathname + window.location.search)
+    // Le message suit la langue courante ; ne relance pas au changement de langue.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -49,7 +49,7 @@ export function LoginPage({
       })
 
       if (!loginRes.ok) {
-        setError('Email ou mot de passe incorrect.')
+        setError(t.login.badCredentials)
         return
       }
 
@@ -63,7 +63,7 @@ export function LoginPage({
       const user = (await meRes.json()) as CurrentUser
       onLogin(access_token, user)
     } catch {
-      setError("Impossible de joindre l'API FabriQ.")
+      setError(t.login.apiUnreachable)
     } finally {
       setLoading(false)
     }
@@ -72,17 +72,32 @@ export function LoginPage({
   return (
     <main className="login-shell">
       <div className="login-card">
-        <div className="brand-lockup">
-          <span className="brand-mark">FQ</span>
-          <div>
-            <h1>FabriQ</h1>
-            <p>Assistant NL - SQL industriel</p>
+        <div className="login-topline">
+          <div className="brand-lockup">
+            <span className="brand-mark">FQ</span>
+            <div>
+              <h1>FabriQ</h1>
+              <p>{t.login.subtitle}</p>
+            </div>
+          </div>
+          <div className="lang-toggle" role="group" aria-label={t.header.langAria}>
+            {(['fr', 'en', 'de'] as Lang[]).map((code) => (
+              <button
+                key={code}
+                type="button"
+                className={lang === code ? 'active' : undefined}
+                aria-pressed={lang === code}
+                onClick={() => setLang(code)}
+              >
+                {code.toUpperCase()}
+              </button>
+            ))}
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
           <label>
-            Email
+            {t.login.email}
             <input
               type="email"
               value={email}
@@ -92,7 +107,7 @@ export function LoginPage({
             />
           </label>
           <label>
-            Mot de passe
+            {t.login.password}
             <input
               type="password"
               value={password}
@@ -104,13 +119,13 @@ export function LoginPage({
           {error && <div className="notice error">{error}</div>}
           <button type="submit" disabled={loading}>
             {loading ? <Loader2 className="spin" size={18} /> : null}
-            {loading ? 'Connexion...' : 'Se connecter'}
+            {loading ? t.login.submitting : t.login.submit}
           </button>
         </form>
 
         {ssoAvailable && (
           <div className="sso-block">
-            <div className="sso-divider">ou</div>
+            <div className="sso-divider">{t.login.ssoOr}</div>
             <button
               type="button"
               className="sso-button"
@@ -119,7 +134,7 @@ export function LoginPage({
               }}
             >
               <KeyRound size={16} />
-              Se connecter avec SSO
+              {t.login.ssoButton}
             </button>
           </div>
         )}

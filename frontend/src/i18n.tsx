@@ -12,6 +12,19 @@ const fr = {
     logout: 'Se déconnecter',
     langAria: "Langue de l'interface",
   },
+  login: {
+    subtitle: 'Assistant NL - SQL industriel',
+    email: 'Email',
+    password: 'Mot de passe',
+    submit: 'Se connecter',
+    submitting: 'Connexion...',
+    badCredentials: 'Email ou mot de passe incorrect.',
+    apiUnreachable: "Impossible de joindre l'API FabriQ.",
+    ssoOr: 'ou',
+    ssoButton: 'Se connecter avec SSO',
+    ssoDisabled: 'Ce compte SSO est désactivé.',
+    ssoFailed: 'La connexion SSO a échoué. Réessayez.',
+  },
   query: {
     heading: 'Question',
     ariaLabel: 'Question en langage naturel',
@@ -166,6 +179,19 @@ const en: typeof fr = {
     toDark: 'Switch to dark mode',
     logout: 'Log out',
     langAria: 'Interface language',
+  },
+  login: {
+    subtitle: 'Natural-language SQL assistant for industry',
+    email: 'Email',
+    password: 'Password',
+    submit: 'Log in',
+    submitting: 'Logging in...',
+    badCredentials: 'Incorrect email or password.',
+    apiUnreachable: 'Could not reach the FabriQ API.',
+    ssoOr: 'or',
+    ssoButton: 'Log in with SSO',
+    ssoDisabled: 'This SSO account is disabled.',
+    ssoFailed: 'SSO login failed. Try again.',
   },
   query: {
     heading: 'Question',
@@ -322,6 +348,19 @@ const de: typeof fr = {
     logout: 'Abmelden',
     langAria: 'Sprache der Oberfläche',
   },
+  login: {
+    subtitle: 'NL-SQL-Assistent für die Industrie',
+    email: 'E-Mail',
+    password: 'Passwort',
+    submit: 'Anmelden',
+    submitting: 'Anmeldung...',
+    badCredentials: 'E-Mail oder Passwort ungültig.',
+    apiUnreachable: 'FabriQ-API nicht erreichbar.',
+    ssoOr: 'oder',
+    ssoButton: 'Mit SSO anmelden',
+    ssoDisabled: 'Dieses SSO-Konto ist deaktiviert.',
+    ssoFailed: 'SSO-Anmeldung fehlgeschlagen. Erneut versuchen.',
+  },
   query: {
     heading: 'Frage',
     ariaLabel: 'Frage in natürlicher Sprache',
@@ -474,8 +513,19 @@ type LangContextValue = { lang: Lang; setLang: (l: Lang) => void; t: typeof fr }
 
 const LangContext = createContext<LangContextValue | null>(null)
 
+const LANG_STORAGE_KEY = 'fabriq_lang'
+
+function initialLang(): Lang {
+  const stored = localStorage.getItem(LANG_STORAGE_KEY)
+  return stored === 'fr' || stored === 'en' || stored === 'de' ? stored : 'fr'
+}
+
 export function LangProvider({ children }: { children: ReactNode }) {
-  const [lang, setLang] = useState<Lang>('fr')
+  const [lang, setLangState] = useState<Lang>(initialLang)
+  const setLang = (l: Lang) => {
+    localStorage.setItem(LANG_STORAGE_KEY, l)
+    setLangState(l)
+  }
   return (
     <LangContext.Provider value={{ lang, setLang, t: translations[lang] }}>
       {children}
