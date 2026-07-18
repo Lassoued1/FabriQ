@@ -1,0 +1,75 @@
+{
+  "realm": "fabriq",
+  "enabled": true,
+  "displayName": "FabriQ SSO",
+  "registrationAllowed": false,
+  "loginTheme": "keycloak",
+  "sslRequired": "external",
+  "clients": [
+    {
+      "clientId": "fabriq-backend",
+      "name": "FabriQ backend (flux SSO backend-driven)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "fabriq-oidc-demo-secret",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["http://localhost:8000/api/auth/oidc/callback"],
+      "webOrigins": ["http://localhost:8000"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "defaultClientScopes": ["profile", "email"],
+      "protocolMappers": [
+        {
+          "name": "fabriq-tenant",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "fabriq_tenant",
+            "claim.value": "tenant_demo",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "fabriq-role",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "fabriq_role",
+            "claim.value": "admin",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "sso.demo",
+      "email": "sso.demo@fabriq.io",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "SSO",
+      "lastName": "Demo",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "fabriq2024",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

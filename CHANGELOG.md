@@ -4,6 +4,27 @@ Historique des versions de FabriQ. Le detail complet de chaque jalon est dans [d
 
 ## v0.14.0 — en cours (non taguee)
 
+- **SSO OIDC optionnel (Keycloak ou tout fournisseur OpenID Connect)** : flux
+  authorization code + PKCE pilote par le backend (`app/oidc.py`). Le backend
+  redirige vers le fournisseur, valide l'id_token (signature RS256 via JWKS,
+  issuer, audience, expiration), mappe les claims `fabriq_tenant`/`fabriq_role`
+  puis emet le JWT FabriQ habituel (`auth=oidc`) — refresh, multi-tenant, audit
+  et desactivation de compte reutilises tels quels. Desactive par defaut :
+  s'active par `FABRIQ_OIDC_ISSUER` + `FABRIQ_OIDC_CLIENT_ID`; le login local
+  `FABRIQ_USERS` reste toujours disponible.
+- **Endpoints** : `GET /api/auth/oidc/login` (302 vers le fournisseur, state
+  anti-CSRF + PKCE S256) et `GET /api/auth/oidc/callback` (echange du code,
+  emission du JWT, retour au frontend via fragment `#sso_token=`). Flag
+  `oidc_enabled` dans `/api/health`.
+- **Keycloak pret a l'emploi** : service docker-compose derriere le profil
+  `sso` (`docker-compose --profile sso up`), realm `fabriq` importe
+  automatiquement (`keycloak/fabriq-realm.json`) avec client confidentiel,
+  mappers de claims et utilisateur de demo `sso.demo` / `fabriq2024`.
+- **Frontend** : bouton « Se connecter avec SSO » affiche uniquement quand le
+  backend expose `oidc_enabled=true`; recuperation du token dans le fragment
+  d'URL (jamais dans les logs serveur) puis nettoyage de l'URL.
+- 125 tests backend (+18 pour l'OIDC : PKCE, anti-rejeu du state, issuer/
+  audience/expiration invalides, mapping des claims, pipeline JWT SSO).
 - **UI en allemand** : troisieme langue du selecteur d'interface (FR/EN/DE).
   Dictionnaire `de` complet dans `i18n.tsx` (meme forme que `fr`/`en`, verrouille
   par test), 10 exemples de questions allemandes issus de la suite d'evaluation

@@ -37,6 +37,21 @@ services:
     depends_on:
       - backend
 
+  # SSO optionnel : demarre uniquement avec `docker-compose --profile sso up`
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    profiles: ["sso"]
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: fabriq-keycloak
+      KC_HOSTNAME: http://localhost:8180
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+    ports:
+      - "8180:8080"
+    volumes:
+      - ./keycloak/fabriq-realm.json:/opt/keycloak/data/import/fabriq-realm.json:ro
+
   prometheus:
     image: prom/prometheus:v2.53.0
     ports:

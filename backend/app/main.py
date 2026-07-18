@@ -6,7 +6,7 @@ from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import RedirectResponse, Response
 from prometheus_fastapi_instrumentator import Instrumentator
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -29,6 +29,7 @@ from .disabled_users import disable_user, enable_user, list_disabled
 from .database import create_database_from_env
 from .llm import check_ollama_health, llm_settings_from_env
 from .models import AskRequest, AskResponse, LoginRequest, TokenResponse
+from .oidc import OidcError, begin_login, complete_login, oidc_settings_from_env
 from .semantic_layer import EXAMPLE_QUESTIONS, semantic_catalog
 from .webhooks import (
     EVENT_TYPES,
@@ -126,6 +127,7 @@ def health() -> dict[str, object]:
         "llm_model_available": llm_health.model_available,
         "llm_latency_ms": llm_health.latency_ms,
         "llm_error": llm_health.error,
+        "oidc_enabled": oidc_settings_from_env().enabled,
     }
 
 
@@ -155,12 +157,64 @@ def login(request: Request, payload: LoginRequest) -> TokenResponse:
     return TokenResponse(access_token=token)
 
 
+# ─── SSO / OIDC (optionnel, active par FABRIQ_OIDC_*) ─────────────────────────
+
+@app.get(
+    "/api/auth/oidc/login",
+    tags=["auth"],
+    summary="Demarrer le login SSO — redirige vers le fournisseur OIDC",
+    responses={404: {"description": "SSO non configure."}},
+)
+def oidc_login() -> RedirectResponse:
+    settings = oidc_settings_from_env()
+    if not settings.enabled:
+        raise HTTPException(status_code=404, detail="SSO non configuré.")
+    return RedirectResponse(begin_login(settings), status_code=302)
+
+
+@app.get(
+    "/api/auth/oidc/callback",
+    tags=["auth"],
+    summary="Callback OIDC — echange le code, emet le JWT FabriQ et redirige vers le frontend",
+)
+def oidc_callback(state: str = "", code: str = "", error: str = "") -> RedirectResponse:
+    settings = oidc_settings_from_env()
+    if not settings.enabled:
+        raise HTTPException(status_code=404, detail="SSO non configuré.")
+    if error or not code or not state:
+        reason = error or "missing_code_or_state"
+        return RedirectResponse(f"{settings.frontend_url}/#sso_error={reason}", status_code=302)
+    try:
+        identity = complete_login(settings, state=state, code=code)
+    except OidcError:
+        return RedirectResponse(f"{settings.frontend_url}/#sso_error=oidc_failed", status_code=302)
+    from .disabled_users import is_disabled
+    if is_disabled(identity.email):
+        return RedirectResponse(f"{settings.frontend_url}/#sso_error=disabled", status_code=302)
+    token = create_access_token(
+        data={
+            "sub": identity.email,
+            "tenant_id": identity.tenant_id,
+            "role": identity.role,
+            "auth": "oidc",
+        },
+        expires_delta=timedelta(minutes=60),
+    )
+    # Fragment (#) plutot que query string : le token n'apparait dans aucun log serveur.
+    return RedirectResponse(f"{settings.frontend_url}/#sso_token={token}", status_code=302)
+
+
 # ─── Protected endpoints ──────────────────────────────────────────────────────
 
 @app.post("/api/auth/refresh", tags=["auth"], summary="Renouveler le token JWT sans re-saisir le mot de passe")
 def refresh_token(current_user: CurrentUser) -> TokenResponse:
     token = create_access_token(
-        data={"sub": current_user.email, "tenant_id": current_user.tenant_id, "role": current_user.role},
+        data={
+            "sub": current_user.email,
+            "tenant_id": current_user.tenant_id,
+            "role": current_user.role,
+            "auth": current_user.auth,
+        },
         expires_delta=timedelta(minutes=60),
     )
     return TokenResponse(access_token=token)

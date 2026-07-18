@@ -48,9 +48,20 @@ import { AdminPanel } from './components/AdminPanel'
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 
+// Callback SSO : le backend redirige vers /#sso_token=... — on stocke le JWT
+// FabriQ et on nettoie l'URL (le fragment ne transite jamais par un serveur).
+function consumeSsoToken(): string | null {
+  const match = window.location.hash.match(/sso_token=([^&]+)/)
+  if (!match) return null
+  const token = match[1]
+  localStorage.setItem('fabriq_token', token)
+  history.replaceState(null, '', window.location.pathname + window.location.search)
+  return token
+}
+
 function App() {
   const [authToken, setAuthToken] = useState<string | null>(
-    () => localStorage.getItem('fabriq_token'),
+    () => consumeSsoToken() ?? localStorage.getItem('fabriq_token'),
   )
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
 

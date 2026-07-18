@@ -295,9 +295,20 @@ Version livree: `v0.13.0`.
 - Le champ `webhook_url` par-regle des alertes reste pour retrocompatibilite (deprecie).
 - Selecteur de langue FR/EN dans l'en-tete : contexte `i18n.tsx` couvrant les 13 composants de l'UI.
 
+## Jalon 17 - V14 trilingue UI et SSO v0.14.0
+
+Version en cours (non taguee).
+
+- UI en allemand : selecteur FR/EN/DE, dictionnaire `de` complet dans `i18n.tsx`, exemples de questions allemands issus de la suite d'evaluation.
+- SSO OIDC optionnel : flux authorization code + PKCE pilote par le backend (`app/oidc.py`), validation id_token via JWKS, mapping des claims `fabriq_tenant`/`fabriq_role`, emission du JWT FabriQ habituel (`auth=oidc`).
+- Keycloak en docker-compose (profil `sso`), realm `fabriq` preconfigure (`keycloak/fabriq-realm.json`).
+- Bouton SSO conditionnel cote frontend, retour du token via fragment d'URL.
+- Le login local `FABRIQ_USERS` reste le defaut ; le SSO est purement additif.
+- 125 tests backend, 15 tests unitaires frontend, E2E 10/10.
+
 ## Horizon suivant
 
-Prochaine version possible: `v0.14.0`.
+Prochaine version possible: `v0.15.0`.
 
-- Authentification OAuth2 / SSO (Keycloak ou Auth0) en remplacement des users env.
 - Demo en ligne optionnelle.
+- Mapping SSO par attributs utilisateur / groupes Keycloak (les mappers de demo utilisent des claims fixes).

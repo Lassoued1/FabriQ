@@ -56,6 +56,7 @@ Document aligne sur la v0.13.0. Le coeur du systeme reste deterministe, auditabl
 | API | `backend/app/main.py` | Endpoints health, auth, ask, catalog, audit, alerts, admin. Rate limiting slowapi. |
 | Graphe | `backend/app/graph.py` | Orchestration LangGraph: routage, generation SQL, validation, execution, composition de la reponse. |
 | Auth | `backend/app/auth.py` | JWT (login, refresh), utilisateurs env bcrypt, roles admin/user, tenant. |
+| SSO | `backend/app/oidc.py` | OIDC optionnel (Keycloak) : authorization code + PKCE pilote par le backend, validation id_token via JWKS, mapping claims -> tenant/role, emission du JWT FabriQ. |
 | Couche semantique | `backend/app/semantic_layer.py` | Catalogue d'intentions, synonymes, templates SQL SQLite/PostgreSQL, formats de graphiques. |
 | LLM | `backend/app/llm.py` | Client Ollama optionnel, routeur d'intention en repli, ping non bloquant. |
 | SQL guard | `backend/app/sql_guard.py` | Validation stricte avant execution. |
@@ -89,8 +90,9 @@ Document aligne sur la v0.13.0. Le coeur du systeme reste deterministe, auditabl
 - **Isolation**: filtrage SQL par `tenant_id` injecte cote serveur, jamais fourni par le client.
 - **LLM**: aucun acces a la base, aucune generation de SQL, sortie contrainte au catalogue d'intentions.
 - **Webhooks**: URLs vers loopback / reseaux prives / link-local / reserve refusees a la creation (garde anti-SSRF), livraison signee HMAC-SHA256.
+- **SSO (optionnel)**: flux OIDC authorization code + PKCE pilote par le backend — state anti-CSRF a usage unique, id_token verifie (signature RS256 via JWKS, issuer, audience, expiration), token remis au frontend via fragment d'URL (absent des logs serveur). Le JWT emis porte `auth=oidc`; la desactivation de compte s'applique aussi aux comptes SSO.
 
-Ameliorations prevues: authentification OAuth2/SSO en remplacement des utilisateurs env (voir [ROADMAP.md](ROADMAP.md)).
+Ameliorations prevues: mapping SSO par attributs utilisateur ou groupes Keycloak (voir [ROADMAP.md](ROADMAP.md)).
 
 ## Donnees
 

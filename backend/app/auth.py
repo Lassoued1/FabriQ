@@ -20,6 +20,7 @@ class UserContext:
     email: str
     tenant_id: str
     role: str  # "admin" | "viewer"
+    auth: str = "local"  # "local" (FABRIQ_USERS) | "oidc" (SSO)
 
 
 @dataclass
@@ -128,6 +129,22 @@ def get_current_user(token: str = Depends(_oauth2_scheme)) -> UserContext:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token invalide : champ sub manquant.",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+    if payload.get("auth") == "oidc":
+        # Utilisateur SSO : identite portee par le token (signe par nous au
+        # callback OIDC), pas par FABRIQ_USERS. La desactivation s'applique.
+        if is_disabled(email):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Compte désactivé.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        return UserContext(
+            user_id=email,
+            email=email,
+            tenant_id=payload.get("tenant_id") or "tenant_demo",
+            role=payload.get("role") or "user",
+            auth="oidc",
         )
     users = load_users_from_env()
     record = users.get(email)

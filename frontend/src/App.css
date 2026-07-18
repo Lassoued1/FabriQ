@@ -1135,6 +1135,70 @@ pre {
   cursor: not-allowed;
 }
 
+/* ─── SSO (OIDC) ────────────────────────────────────────────────────────── */
+
+.sso-block {
+  margin-top: 14px;
+}
+
+.sso-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  color: #8b98a9;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.sso-divider::before,
+.sso-divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid #e5e9ef;
+}
+
+.sso-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2a3a;
+  background: #f1f5f9;
+  border: 1px solid #d7dee8;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.sso-button:hover {
+  background: #e2e8f0;
+}
+
+[data-theme="dark"] .sso-divider {
+  color: #64748b;
+}
+
+[data-theme="dark"] .sso-divider::before,
+[data-theme="dark"] .sso-divider::after {
+  border-top-color: #2c3a4e;
+}
+
+[data-theme="dark"] .sso-button {
+  color: #dbe4ef;
+  background: #1b2635;
+  border-color: #2c3a4e;
+}
+
+[data-theme="dark"] .sso-button:hover {
+  background: #223047;
+}
+
 /* ─── Auth — topbar additions ───────────────────────────────────────────── */
 
 .tenant-badge {
