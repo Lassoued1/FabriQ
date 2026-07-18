@@ -1,7 +1,7 @@
 import { createContext, useContext, useState } from 'react'
 import type { ReactNode } from 'react'
 
-export type Lang = 'fr' | 'en'
+export type Lang = 'fr' | 'en' | 'de'
 
 const fr = {
   header: {
@@ -313,7 +313,162 @@ const en: typeof fr = {
   },
 }
 
-export const translations: Record<Lang, typeof fr> = { fr, en }
+const de: typeof fr = {
+  header: {
+    subtitle: 'NL-SQL-Assistent für die Industrie',
+    readonly: 'Read-only',
+    toLight: 'Zum hellen Modus wechseln',
+    toDark: 'Zum dunklen Modus wechseln',
+    logout: 'Abmelden',
+    langAria: 'Sprache der Oberfläche',
+  },
+  query: {
+    heading: 'Frage',
+    ariaLabel: 'Frage in natürlicher Sprache',
+    placeholder: 'Stellen Sie eine Geschäftsfrage auf Deutsch…',
+    analyze: 'Analysieren',
+    analyzing: 'Analyse…',
+  },
+  catalog: {
+    heading: 'Katalog',
+    aria: 'Semantischer Katalog',
+    intents: 'Intentionen',
+    tables: 'Tabellen',
+    loading: 'Laden…',
+    columns: 'Spalten',
+  },
+  obs: {
+    heading: 'Observability',
+    refresh: 'Aktualisieren',
+    exportCsv: 'Als CSV exportieren',
+    exportXlsx: 'Als Excel exportieren',
+    unknown: 'unbekannt',
+    filterIntent: 'Nach Intention filtern',
+    filterStatus: 'Nach Status filtern',
+    allStatuses: 'Alle Status',
+    valid: 'Gültig',
+    blocked: 'Blockiert',
+    latestTrace: 'Letzter Trace',
+    noTrace: 'Kein aktueller Trace.',
+    rows: 'Zeilen',
+    intents: {
+      all: 'Alle Intentionen',
+      margin_trend: 'Margentrend',
+      stockout_risk: 'Engpassrisiko',
+      supplier_delays: 'Lieferverzug',
+      production_efficiency: 'Produktionseff.',
+      revenue_trend: 'Umsatztrend',
+      stock_aging: 'Lageralterung',
+      logistics_cost: 'Logistikkosten',
+      returns_rate: 'Retouren',
+      customer_concentration: 'Kunden',
+      anomaly_detection: 'Anomalie',
+    },
+  },
+  alerts: {
+    heading: 'Alerts',
+    refresh: 'Aktualisieren',
+    exportCsv: 'Ereignisse als CSV exportieren',
+    newAlert: 'Neuer Alert',
+    name: 'Name des Alerts',
+    cronPh: 'Cron (z. B. 0 8 * * *)',
+    webhookPh: 'Webhook-URL (optional)',
+    slackPh: 'Slack-Webhook-URL (optional)',
+    emailPh: 'Empfänger-E-Mails (optional, kommagetrennt)',
+    create: 'Erstellen',
+    delete: 'Löschen',
+    noRules: 'Keine Regeln. Mit + eine neue anlegen.',
+    triggers: 'Auslösungen',
+    noEvents: 'Keine Ereignisse.',
+    value: 'Wert',
+    opGt: '> größer als',
+    opLt: '< kleiner als',
+    opGte: '≥ größer oder gleich',
+    opLte: '≤ kleiner oder gleich',
+    intents: {
+      supplier_delays: 'Lieferverzug',
+      stockout_risk: 'Engpassrisiko',
+      margin_trend: 'Margentrend',
+      returns_rate: 'Retourenquote',
+      anomaly_detection: 'Lageranomalie',
+    },
+  },
+  admin: {
+    heading: 'Benutzer',
+    none: 'Keine Benutzer geladen.',
+    email: 'E-Mail',
+    tenant: 'Tenant',
+    role: 'Rolle',
+    enable: 'Aktivieren',
+    disable: 'Deaktivieren',
+    reactivate: 'Reaktivieren',
+    deactivate: 'Deaktivieren',
+  },
+  result: {
+    pending: 'Ausstehend',
+    sqlValid: 'SQL gültig',
+    validation: 'Validierung',
+    rows: 'Zeilen',
+    rowsZero: '0 Zeilen',
+    emptyState: 'Stellen Sie eine industrielle Frage, um die FabriQ-Schleife zu starten.',
+    exportPdfTitle: 'Analyse als PDF exportieren',
+    exportPdf: 'PDF exportieren',
+    answer: 'Antwort',
+    pipeline: 'Pipeline',
+    chart: 'Diagramm',
+    results: 'Ergebnisse',
+    noQuery: 'Keine Abfrage erzeugt.',
+    noChart: 'Keine Diagrammdaten.',
+    noRows: 'Keine Zeilen.',
+    noPipeline: 'Kein Pipeline-Trace.',
+  },
+  webhooks: {
+    heading: 'Webhooks',
+    refresh: 'Aktualisieren',
+    newWebhook: 'Neuer Webhook',
+    name: 'Name des Webhooks',
+    url: 'URL (https://...)',
+    events: 'Ereignisse',
+    create: 'Erstellen',
+    noWebhooks: 'Keine Webhooks. Mit + einen neuen anlegen.',
+    testPing: 'Test-Ping senden',
+    delete: 'Löschen',
+    deliveries: 'Zustellungen',
+    noDeliveries: 'Keine Zustellungen.',
+  },
+  errors: {
+    api: 'API nicht erreichbar',
+    catalog: 'Katalog nicht verfügbar',
+    alerts: 'Alerts nicht verfügbar',
+    webhooks: 'Webhooks nicht verfügbar',
+  },
+  toasts: {
+    rateLimit: 'Zu viele Anfragen — bitte einige Sekunden warten.',
+    networkError: 'Netzwerkfehler.',
+    userToggleFail: (email: string, disable: boolean) =>
+      `${email} konnte nicht ${disable ? 'deaktiviert' : 'aktiviert'} werden.`,
+    userToggled: (email: string, disable: boolean) =>
+      `${email} ${disable ? 'deaktiviert' : 'aktiviert'}.`,
+    alertCreated: 'Alert erstellt.',
+    alertCreateFail: 'Alert konnte nicht erstellt werden.',
+    alertDeleted: 'Alert gelöscht.',
+    alertDeleteFail: 'Alert konnte nicht gelöscht werden.',
+    webhookCreated: 'Webhook erstellt.',
+    webhookCreateFail: 'Webhook konnte nicht erstellt werden.',
+    webhookDeleted: 'Webhook gelöscht.',
+    webhookDeleteFail: 'Webhook konnte nicht gelöscht werden.',
+    testFail: 'Testversand fehlgeschlagen.',
+    pingDelivered: 'Ping zugestellt (2xx).',
+    pingNotDelivered: 'Ping gesendet, aber nicht zugestellt.',
+    exportExcel: 'Excel-Export heruntergeladen.',
+    exportExcelFail: 'Fehler beim Excel-Export.',
+    exportAudit: 'Audit-Export heruntergeladen.',
+    exportFail: 'Fehler beim Export.',
+    exportAlerts: 'Alert-Export heruntergeladen.',
+  },
+}
+
+export const translations: Record<Lang, typeof fr> = { fr, en, de }
 
 type LangContextValue = { lang: Lang; setLang: (l: Lang) => void; t: typeof fr }
 

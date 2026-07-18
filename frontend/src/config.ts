@@ -9,12 +9,12 @@ export const fallbackExamples = [
 ]
 
 // ─── Exemples de questions par langue ──────────────────────────────────────────
-// Le backend comprend les questions en francais et en anglais ; le selecteur de
-// langue (voir i18n.tsx) bascule les libelles ET les exemples affiches. La
-// reponse, elle, reste dans la langue de la question posee.
+// Le backend comprend les questions en francais, en anglais et en allemand ; le
+// selecteur de langue (voir i18n.tsx) bascule les libelles ET les exemples
+// affiches. La reponse, elle, reste dans la langue de la question posee.
 // Exemples verifies (un par intention) — issus des suites d'evaluation,
 // garantis de router correctement.
-export const examplesByLang: Record<'fr' | 'en', string[]> = {
+export const examplesByLang: Record<'fr' | 'en' | 'de', string[]> = {
   fr: fallbackExamples,
   en: [
     'Which products saw their margin drop last quarter?',
@@ -27,5 +27,17 @@ export const examplesByLang: Record<'fr' | 'en', string[]> = {
     'Which products have the highest return rate?',
     'Which customers account for the largest share of revenue?',
     'What changed unusually last month?',
+  ],
+  de: [
+    'Bei welchen Produkten ist die Marge im letzten Quartal gesunken?',
+    'Welche Artikel haben in den nächsten 30 Tagen einen Engpass?',
+    'Welche Lieferanten waren am häufigsten verspätet?',
+    'Welche Produktionslinien hatten die meisten Fehler?',
+    'Zeige den monatlichen Umsatz pro Kategorie.',
+    'Welche Produkte liegen zu lange im Lager?',
+    'Welche Routen sind teurer geworden?',
+    'Welche Produkte haben die höchste Retourenquote?',
+    'Welche Kunden machen den größten Teil des Umsatzes aus?',
+    'Was hat sich im letzten Monat ungewöhnlich verändert?',
   ],
 }

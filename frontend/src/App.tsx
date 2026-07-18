@@ -587,7 +587,7 @@ function App() {
             <MessageSquare size={18} />
             <h2>{t.query.heading}</h2>
             <div className="lang-toggle" role="group" aria-label={t.header.langAria}>
-              {(['fr', 'en'] as Lang[]).map((code) => (
+              {(['fr', 'en', 'de'] as Lang[]).map((code) => (
                 <button
                   key={code}
                   type="button"
@@ -616,7 +616,7 @@ function App() {
           </form>
 
           <div className="examples-list">
-            {(lang === 'en' ? examplesByLang.en : examples).slice(0, 10).map((example) => (
+            {(lang === 'fr' ? examples : examplesByLang[lang]).slice(0, 10).map((example) => (
               <button key={example} type="button" onClick={() => void ask(example)}>
                 {example}
               </button>

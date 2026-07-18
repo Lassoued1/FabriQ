@@ -2,6 +2,15 @@
 
 Historique des versions de FabriQ. Le detail complet de chaque jalon est dans [docs/ROADMAP.md](docs/ROADMAP.md).
 
+## v0.14.0 — en cours (non taguee)
+
+- **UI en allemand** : troisieme langue du selecteur d'interface (FR/EN/DE).
+  Dictionnaire `de` complet dans `i18n.tsx` (meme forme que `fr`/`en`, verrouille
+  par test), 10 exemples de questions allemandes issus de la suite d'evaluation
+  `german.json` (un par intention, garantis de router). Correction au passage :
+  les exemples affiches suivent desormais la langue via `examplesByLang[lang]`
+  (avant, seul l'anglais etait gere). 15 tests unitaires frontend.
+
 ## v0.13.0 — 18 juillet 2026
 
 - **Webhooks sortants generiques** : systeme d'evenements decouple des alertes.
