@@ -59,7 +59,7 @@ export function WebhooksPanel({
   }
 
   return (
-    <section className="alerts-panel">
+    <section className="webhooks-panel">
       <div className="panel-heading compact">
         <Webhook size={18} />
         <h2>{t.webhooks.heading}</h2>

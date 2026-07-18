@@ -948,7 +948,8 @@ pre {
 
 /* ─── Alerts panel ──────────────────────────────────────────────────────── */
 
-.alerts-panel {
+.alerts-panel,
+.webhooks-panel {
   border-top: 1px solid #e5e9ef;
   padding-top: 16px;
   margin-top: 8px;
