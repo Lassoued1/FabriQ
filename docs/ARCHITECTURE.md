@@ -1,6 +1,6 @@
 # FabriQ - Architecture
 
-Document aligne sur la v0.11.0 (inclut les developpements v0.12.0/v0.13.0 en cours, non taguees). Le coeur du systeme reste deterministe, auditable et protege par un garde-fou SQL: le LLM local est optionnel et cantonne au routage d'intention.
+Document aligne sur la v0.13.0. Le coeur du systeme reste deterministe, auditable et protege par un garde-fou SQL: le LLM local est optionnel et cantonne au routage d'intention.
 
 ## Vue d'ensemble
 

@@ -7,7 +7,7 @@
 
 FabriQ is an analytics assistant for industrial SMEs: ask a question in natural language, get a safe SQL query, executed read-only, then a readable answer with table, chart, visible SQL, and an operational explanation.
 
-**Current version: v0.11.0** — natural-language questions driving parameterized queries, an SQL guardrail backed by a read-only database role, multi-user, multi-tenant, LangGraph orchestration, scheduled alerts, Prometheus/Grafana observability, CI and E2E tests.
+**Current version: v0.13.0** — natural-language questions in French, German and English driving parameterized queries, an SQL guardrail backed by a read-only database role, multi-user, multi-tenant, LangGraph orchestration, scheduled alerts, generic outgoing webhooks (HMAC-signed, SSRF-guarded), an FR/EN interface language selector, Prometheus/Grafana observability, CI and E2E tests.
 
 ![FabriQ demo](docs/assets/fabriq-v0.11.0-demo.gif)
 

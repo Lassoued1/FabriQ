@@ -4,9 +4,9 @@ Document de reprise (handoff). Résume l'état courant, comment lancer, et les p
 
 ## État courant
 
-- **Version** : v0.11.0 taguée/publiée ; **v0.12.0** (support anglais) et **v0.13.0** (webhooks sortants génériques) en cours, non taguées — dépôt public https://github.com/Lassoued1/FabriQ
-- **CI** : GitHub Actions 100 % verte (backend, frontend, E2E Playwright, Docker). Le job backend exécute désormais toute la suite `tests` (avant : seul `test_agent.py`).
-- **Tests** : 107 backend (pytest) + 166 sous-tests, 9 unitaires frontend (Vitest), 10 E2E (Playwright), 4 suites d'évaluation (golden 43, paraphrases 10, allemand 15, anglais 15).
+- **Version** : v0.13.0 taguée/publiée le 18 juillet 2026 (v0.12.0 taguée le même jour, sur le même état du dépôt : les deux périmètres ont atterri dans le même commit) — dépôt public https://github.com/Lassoued1/FabriQ
+- **CI** : GitHub Actions verte (backend, frontend, E2E Playwright, Docker). Le job backend exécute toute la suite `tests`. La CI a été rouge du 15 au 18 juillet : `WebhooksPanel` réutilisait la classe CSS `alerts-panel`, ce qui faisait échouer le sélecteur strict Playwright (voir piège 9).
+- **Tests** : 107 backend (pytest) + 166 sous-tests, 13 unitaires frontend (Vitest), 10 E2E (Playwright), 4 suites d'évaluation (golden 43, paraphrases 10, allemand 15, anglais 15).
 
 ## Stack
 
@@ -66,10 +66,11 @@ cd frontend && npx playwright test                  # E2E
 6. **"drop" ≠ écriture** : le mot anglais "drop" ("margin drop", "sales drop") est une tournure de LECTURE, pas une demande d'écriture. Il est volontairement absent de `_WRITE_REQUEST_PATTERN` ; un vrai `DROP TABLE` est bloqué par le garde-fou SQL (parseur AST dans `sql_guard.py`), pas par la détection en langage naturel. Ne pas le rajouter au pattern NL sous peine de refuser les questions de marge en anglais.
 7. **Webhooks — garde SSRF** : `webhooks.is_safe_webhook_url` refuse loopback / réseaux privés / link-local / réservé et les schémas non HTTP(S). Vérifiée à la création (400). Elle fait une résolution DNS (`getaddrinfo`) : les tests l'exercent avec des IP littérales pour rester hors-ligne. En démo locale, un webhook vers `localhost`/`127.0.0.1` est donc **refusé par conception** (utiliser une IP publique ou un tunnel).
 8. **Webhooks — données runtime** : `backend/webhooks/subscriptions.json` contient les secrets HMAC → dossier gitignoré (`backend/webhooks/`), jamais commité. Le journal de livraison est sous `backend/logs/` (déjà gitignoré).
+9. **Classes CSS et sélecteurs E2E** : les specs Playwright ciblent des classes de panneau (`.alerts-panel`, `.observability-panel`…) en mode strict. Réutiliser la classe d'un panneau existant pour un nouveau panneau casse les E2E (vécu avec `WebhooksPanel` qui portait `alerts-panel` → CI rouge 3 jours). Donner à chaque panneau sa propre classe et mutualiser le style via un sélecteur groupé dans App.css.
 
 ## Prochaines pistes (au-delà)
 
-- **Fait (v0.12, en cours)** : questions en anglais — mots-clés, verbes d'écriture, paramètres, suite `evaluation/english.json` 15/15.
-- **Fait (v0.13, en cours)** : webhooks sortants génériques — émetteur d'événements, signature HMAC, reessais, garde SSRF, panneau UI. Voir [ROADMAP.md](ROADMAP.md) jalon 16.
+- **Fait (v0.12.0)** : questions en anglais — mots-clés, verbes d'écriture, paramètres, suite `evaluation/english.json` 15/15.
+- **Fait (v0.13.0)** : webhooks sortants génériques — émetteur d'événements, signature HMAC, reessais, garde SSRF, panneau UI — et sélecteur de langue FR/EN (i18n.tsx). Voir [ROADMAP.md](ROADMAP.md) jalon 16.
 - Authentification OAuth2 / SSO (Keycloak ou Auth0) en remplacement des utilisateurs env.
 - Démo en ligne.

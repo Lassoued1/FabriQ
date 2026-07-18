@@ -2,7 +2,7 @@
 
 Historique des versions de FabriQ. Le detail complet de chaque jalon est dans [docs/ROADMAP.md](docs/ROADMAP.md).
 
-## v0.13.0 — en cours (non taguee)
+## v0.13.0 — 18 juillet 2026
 
 - **Webhooks sortants generiques** : systeme d'evenements decouple des alertes.
   Souscriptions par tenant (`app/webhooks.py`) enregistrant une URL, une liste
@@ -18,9 +18,20 @@ Historique des versions de FabriQ. Le detail complet de chaque jalon est dans [d
   `deliveries`), tous scopes par tenant.
 - **Frontend** : `WebhooksPanel` (creation avec cases d'evenements, liste, bouton
   Tester, journal de livraison repliable), monte dans la sidebar.
-- 107 tests backend + 166 sous-tests (+22 pour les webhooks).
+- **i18n frontend** : selecteur de langue FR/EN dans l'en-tete, contexte
+  `i18n.tsx` couvrant les 13 composants (libelles, exemples de questions,
+  panneaux). La reponse suit la langue de la question posee.
+- **Correctif E2E** : `WebhooksPanel` reutilisait la classe CSS `alerts-panel`,
+  ce qui cassait le selecteur strict Playwright du panneau alertes ; il a
+  desormais sa propre classe `webhooks-panel`.
+- 107 tests backend + 166 sous-tests (+22 pour les webhooks), 13 tests unitaires
+  frontend (Vitest), E2E 10/10.
 
-## v0.12.0 — en cours (non taguee)
+Note : v0.12.0 et v0.13.0 ont ete developpees en parallele sur `main` (les deux
+perimetres ont atterri dans le meme commit) ; les deux tags pointent sur le meme
+etat du depot.
+
+## v0.12.0 — 18 juillet 2026
 
 - **Questions en anglais** : mots-cles EN sur les 10 intentions, verbes d'ecriture
   refuses (remove, update, delete, add...), parametres extraits (next N days,

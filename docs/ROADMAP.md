@@ -4,9 +4,7 @@ FabriQ est un assistant d'analyse pour PME industrielles: une question en langag
 
 ## Etat actuel
 
-Version stabilisee: `FabriQ v0.11.0`.
-
-Version courante de developpement: `v0.12.0` (support anglais) et `v0.13.0` (webhooks sortants generiques) en cours, non taguees.
+Version stabilisee: `FabriQ v0.13.0` (v0.12.0 et v0.13.0 taguees le 18 juillet 2026 sur le meme etat du depot — leurs perimetres ont atterri dans le meme commit).
 
 | Jalon | Etat | Commentaire |
 | --- | --- | --- |
@@ -25,8 +23,8 @@ Version courante de developpement: `v0.12.0` (support anglais) et `v0.13.0` (web
 | Jalon 12 - V9 qualite et experience v0.9.0 | Termine | E2E Playwright, export PDF, toasts. |
 | Jalon 13 - V10 portfolio et export v0.10.0 | Termine | Export xlsx audit, depot Git initialise, README/architecture/changelog actualises, 60 tests. |
 | Jalon 14 - V11 gouvernance et bilingue v0.11.0 | Termine | Garde-fou AST + EXPLAIN + timeout, suite adversariale, parametres extraits des questions, allemand, refactor frontend, 78 tests. |
-| Jalon 15 - V12 trilingue v0.12.0 | En cours | Support des questions en anglais, CI elargie a toute la suite tests, 85 tests. |
-| Jalon 16 - V13 webhooks sortants v0.13.0 | En cours | Webhooks generiques par evenement, signature HMAC, reessais, garde SSRF, panneau UI, 107 tests. |
+| Jalon 15 - V12 trilingue v0.12.0 | Termine | Support des questions en anglais, CI elargie a toute la suite tests, 85 tests. |
+| Jalon 16 - V13 webhooks sortants v0.13.0 | Termine | Webhooks generiques par evenement, signature HMAC, reessais, garde SSRF, panneau UI, i18n FR/EN, 107 tests. |
 
 ## Objectif MVP
 
@@ -277,7 +275,7 @@ Version livree: `v0.11.0`.
 
 ## Jalon 15 - V12 trilingue v0.12.0
 
-Version en cours (non taguee).
+Version livree: `v0.12.0`.
 
 - Support des questions en anglais : mots-cles EN sur les 10 intentions, verbes d'ecriture refuses (remove, update, delete, add...), parametres extraits (next N days, last N months, quarter, semester, N largest).
 - Suite d'evaluation `evaluation/english.json`, lancee par `scripts/evaluate.py --suite=english` : 15/15.
@@ -287,7 +285,7 @@ Version en cours (non taguee).
 
 ## Jalon 16 - V13 webhooks sortants v0.13.0
 
-Version en cours (non taguee).
+Version livree: `v0.13.0`.
 
 - Emetteur d'evenements central (`app/webhooks.py`) decouple des alertes : souscription = URL + types abonnes + secret HMAC, persistance JSON par tenant.
 - Types d'evenements : `question.answered`, `question.blocked` (depuis `/api/ask`), `auth.login_failed` (login), `alert.fired` (pont depuis `alerts._fire_rule`).
@@ -295,6 +293,7 @@ Version en cours (non taguee).
 - Garde anti-SSRF : refus des URLs internes (loopback / prive / link-local / reserve) et des schemas non HTTP(S).
 - 6 endpoints `/api/webhooks*` (CRUD, event-types, test, deliveries) scopes par tenant ; panneau `WebhooksPanel` cote frontend.
 - Le champ `webhook_url` par-regle des alertes reste pour retrocompatibilite (deprecie).
+- Selecteur de langue FR/EN dans l'en-tete : contexte `i18n.tsx` couvrant les 13 composants de l'UI.
 
 ## Horizon suivant
 
