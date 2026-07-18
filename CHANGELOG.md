@@ -2,7 +2,7 @@
 
 Historique des versions de FabriQ. Le detail complet de chaque jalon est dans [docs/ROADMAP.md](docs/ROADMAP.md).
 
-## v0.14.0 — en cours (non taguee)
+## v0.14.0 — 18 juillet 2026
 
 - **SSO OIDC optionnel (Keycloak ou tout fournisseur OpenID Connect)** : flux
   authorization code + PKCE pilote par le backend (`app/oidc.py`). Le backend

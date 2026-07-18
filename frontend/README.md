@@ -1,6 +1,6 @@
 # FabriQ Frontend
 
-Interface React + Vite de FabriQ v0.13.0 (voir [../CHANGELOG.md](../CHANGELOG.md)).
+Interface React + Vite de FabriQ v0.14.0 (voir [../CHANGELOG.md](../CHANGELOG.md)).
 
 ## Role
 

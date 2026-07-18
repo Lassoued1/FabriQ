@@ -4,7 +4,7 @@ FabriQ est un assistant d'analyse pour PME industrielles: une question en langag
 
 ## Etat actuel
 
-Version stabilisee: `FabriQ v0.13.0` (v0.12.0 et v0.13.0 taguees le 18 juillet 2026 sur le meme etat du depot — leurs perimetres ont atterri dans le meme commit).
+Version stabilisee: `FabriQ v0.14.0` (taguee le 18 juillet 2026).
 
 | Jalon | Etat | Commentaire |
 | --- | --- | --- |
@@ -25,6 +25,7 @@ Version stabilisee: `FabriQ v0.13.0` (v0.12.0 et v0.13.0 taguees le 18 juillet 2
 | Jalon 14 - V11 gouvernance et bilingue v0.11.0 | Termine | Garde-fou AST + EXPLAIN + timeout, suite adversariale, parametres extraits des questions, allemand, refactor frontend, 78 tests. |
 | Jalon 15 - V12 trilingue v0.12.0 | Termine | Support des questions en anglais, CI elargie a toute la suite tests, 85 tests. |
 | Jalon 16 - V13 webhooks sortants v0.13.0 | Termine | Webhooks generiques par evenement, signature HMAC, reessais, garde SSRF, panneau UI, i18n FR/EN, 107 tests. |
+| Jalon 17 - V14 trilingue UI et SSO v0.14.0 | Termine | UI en allemand (FR/EN/DE), SSO OIDC optionnel (Keycloak, PKCE, JWKS), 125 tests. |
 
 ## Objectif MVP
 
@@ -297,7 +298,7 @@ Version livree: `v0.13.0`.
 
 ## Jalon 17 - V14 trilingue UI et SSO v0.14.0
 
-Version en cours (non taguee).
+Version livree: `v0.14.0`.
 
 - UI en allemand : selecteur FR/EN/DE, dictionnaire `de` complet dans `i18n.tsx`, exemples de questions allemands issus de la suite d'evaluation.
 - SSO OIDC optionnel : flux authorization code + PKCE pilote par le backend (`app/oidc.py`), validation id_token via JWKS, mapping des claims `fabriq_tenant`/`fabriq_role`, emission du JWT FabriQ habituel (`auth=oidc`).

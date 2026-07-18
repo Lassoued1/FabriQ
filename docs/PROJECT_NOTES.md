@@ -4,9 +4,9 @@ Document de reprise (handoff). Résume l'état courant, comment lancer, et les p
 
 ## État courant
 
-- **Version** : v0.13.0 taguée/publiée le 18 juillet 2026 (v0.12.0 taguée le même jour, sur le même état du dépôt : les deux périmètres ont atterri dans le même commit) — dépôt public https://github.com/Lassoued1/FabriQ
+- **Version** : v0.14.0 taguée/publiée le 18 juillet 2026 (UI trilingue FR/EN/DE + SSO OIDC optionnel) — dépôt public https://github.com/Lassoued1/FabriQ
 - **CI** : GitHub Actions verte (backend, frontend, E2E Playwright, Docker). Le job backend exécute toute la suite `tests`. La CI a été rouge du 15 au 18 juillet : `WebhooksPanel` réutilisait la classe CSS `alerts-panel`, ce qui faisait échouer le sélecteur strict Playwright (voir piège 9).
-- **Tests** : 107 backend (pytest) + 166 sous-tests, 13 unitaires frontend (Vitest), 10 E2E (Playwright), 4 suites d'évaluation (golden 43, paraphrases 10, allemand 15, anglais 15).
+- **Tests** : 125 backend (pytest) + 166 sous-tests, 15 unitaires frontend (Vitest), 10 E2E (Playwright), 4 suites d'évaluation (golden 43, paraphrases 10, allemand 15, anglais 15).
 
 ## Stack
 

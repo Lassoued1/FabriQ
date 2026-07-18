@@ -1,5 +1,5 @@
 export const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
-export const APP_VERSION = 'v0.13.0'
+export const APP_VERSION = 'v0.14.0'
 
 export const fallbackExamples = [
   'Quels produits ont vu leur marge baisser le trimestre dernier ?',

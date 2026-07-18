@@ -1,8 +1,8 @@
 # FabriQ Backend
 
-API FastAPI de FabriQ v0.13.0 (voir [../CHANGELOG.md](../CHANGELOG.md)).
+API FastAPI de FabriQ v0.14.0 (voir [../CHANGELOG.md](../CHANGELOG.md)).
 
-La version exposee par FastAPI (`/api/health`) est `0.13.0`.
+La version exposee par FastAPI (`/api/health`) est `0.14.0`.
 
 ## Lancement
 
