@@ -29,3 +29,6 @@ backend/webhooks/
 # Environment
 .env
 .env.local
+
+# Office lock files
+~$*

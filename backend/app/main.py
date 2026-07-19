@@ -69,7 +69,7 @@ _TAGS_METADATA = [
 
 app = FastAPI(
     title="FabriQ API",
-    version="0.14.0",
+    version="0.15.0",
     description=(
         "FabriQ est un assistant d'analyse industrielle NL→SQL. "
         "Une question en français, une requête SQL sécurisée, "

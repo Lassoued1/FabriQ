@@ -231,7 +231,7 @@ class AgentTest(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(payload["status"], "ok")
-        self.assertEqual(payload["version"], "0.14.0")
+        self.assertEqual(payload["version"], "0.15.0")
         self.assertIn("llm_status", payload)
         self.assertIn("llm_reachable", payload)
         self.assertIn("llm_model_available", payload)

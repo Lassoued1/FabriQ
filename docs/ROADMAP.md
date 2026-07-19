@@ -4,7 +4,7 @@ FabriQ est un assistant d'analyse pour PME industrielles: une question en langag
 
 ## Etat actuel
 
-Version stabilisee: `FabriQ v0.14.0` (taguee le 18 juillet 2026).
+Version stabilisee: `FabriQ v0.15.0` (taguee le 20 juillet 2026).
 
 | Jalon | Etat | Commentaire |
 | --- | --- | --- |
@@ -26,6 +26,7 @@ Version stabilisee: `FabriQ v0.14.0` (taguee le 18 juillet 2026).
 | Jalon 15 - V12 trilingue v0.12.0 | Termine | Support des questions en anglais, CI elargie a toute la suite tests, 85 tests. |
 | Jalon 16 - V13 webhooks sortants v0.13.0 | Termine | Webhooks generiques par evenement, signature HMAC, reessais, garde SSRF, panneau UI, i18n FR/EN, 107 tests. |
 | Jalon 17 - V14 trilingue UI et SSO v0.14.0 | Termine | UI en allemand (FR/EN/DE), SSO OIDC optionnel (Keycloak, PKCE, JWKS), 125 tests. |
+| Jalon 18 - V15 login trilingue et langue persistee v0.15.0 | Termine | Page de login traduite FR/EN/DE, choix de langue persiste dans localStorage. |
 
 ## Objectif MVP
 
@@ -307,9 +308,16 @@ Version livree: `v0.14.0`.
 - Le login local `FABRIQ_USERS` reste le defaut ; le SSO est purement additif.
 - 125 tests backend, 15 tests unitaires frontend, E2E 10/10.
 
+## Jalon 18 - V15 login trilingue et langue persistee v0.15.0
+
+Version livree: `v0.15.0`.
+
+- Page de login trilingue : dernier ecran encore monolingue, traduit FR/EN/DE via `i18n.tsx` (labels, boutons, sous-titre, erreurs d'authentification, bloc SSO) avec son propre selecteur de langue.
+- Langue persistee dans `localStorage` (`fabriq_lang`) : survit au rechargement et se propage de la page de login vers l'application.
+
 ## Horizon suivant
 
-Prochaine version possible: `v0.15.0`.
+Prochaine version possible: `v0.16.0`.
 
 - Demo en ligne optionnelle.
 - Mapping SSO par attributs utilisateur / groupes Keycloak (les mappers de demo utilisent des claims fixes).

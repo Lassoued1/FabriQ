@@ -2,7 +2,7 @@
 
 Historique des versions de FabriQ. Le detail complet de chaque jalon est dans [docs/ROADMAP.md](docs/ROADMAP.md).
 
-## v0.15.0 — en cours (non taguee)
+## v0.15.0 — 20 juillet 2026
 
 - **Page de login trilingue** : dernier ecran encore monolingue, desormais
   traduit FR/EN/DE via `i18n.tsx` (labels email/mot de passe, boutons, sous-titre,
