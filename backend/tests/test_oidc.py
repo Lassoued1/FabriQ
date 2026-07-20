@@ -202,6 +202,13 @@ class CompleteLoginTests(OidcTestBase):
             with self.assertRaises(OidcError):
                 complete_login(_SETTINGS, state=state, code="abc")
 
+    def test_provider_socket_timeout_becomes_oidc_error(self) -> None:
+        # Un timeout socket pendant l'echange (fournisseur lent/injoignable)
+        # doit devenir une OidcError (redirection #sso_error), pas un 500.
+        with mock.patch.object(oidc.urllib.request, "urlopen", side_effect=TimeoutError("timed out")):
+            with self.assertRaises(OidcError):
+                oidc._exchange_code(_SETTINGS, code="abc", verifier="v")
+
 
 class SsoJwtPipelineTests(unittest.TestCase):
     """Le JWT FabriQ emis au callback traverse get_current_user et refresh."""

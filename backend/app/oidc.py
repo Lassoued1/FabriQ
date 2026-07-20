@@ -200,7 +200,9 @@ def _exchange_code(settings: OidcSettings, code: str, verifier: str) -> dict:
             return json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         raise OidcError(f"Echange du code refuse par le fournisseur ({exc.code}).") from exc
-    except urllib.error.URLError as exc:
+    except OSError as exc:
+        # URLError, timeouts socket, connexions coupees : jamais de 500 brut,
+        # le callback redirige vers le frontend avec #sso_error.
         raise OidcError("Fournisseur OIDC injoignable pour l'echange du code.") from exc
 
 

@@ -7,7 +7,7 @@ async function login(page: Page) {
   await page.goto('/')
   await page.getByLabel(/email/i).fill(ADMIN_EMAIL)
   await page.getByLabel(/mot de passe/i).fill(ADMIN_PASSWORD)
-  await page.getByRole('button', { name: /se connecter/i }).click()
+  await page.getByRole('button', { name: 'Se connecter', exact: true }).click()
   await page.getByLabel(/question en langage naturel/i).waitFor({ timeout: 10_000 })
 }
 

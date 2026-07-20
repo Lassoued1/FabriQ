@@ -2,6 +2,25 @@
 
 Historique des versions de FabriQ. Le detail complet de chaque jalon est dans [docs/ROADMAP.md](docs/ROADMAP.md).
 
+## v0.16.0 — en cours (non taguee)
+
+- **E2E du SSO en CI** : le parcours SSO complet (bouton -> fournisseur ->
+  callback -> app connectee) est desormais joue par Playwright a chaque push,
+  contre un stub OIDC versionne (`backend/scripts/oidc_stub.py`) qui verifie
+  reellement le PKCE et signe ses id_tokens RS256 (la validation JWKS de
+  `app/oidc.py` est donc exercee pour de vrai). Nouveau projet Playwright `sso`
+  active par `E2E_SSO=1` : second dev server Vite (5174) pointant sur un backend
+  dedie (8001) configure avec `FABRIQ_OIDC_*` vers le stub. 12 tests E2E.
+- **Robustesse callback OIDC** : un timeout socket pendant l'echange du code
+  (fournisseur lent ou injoignable) devient une `OidcError` -> redirection
+  `#sso_error` cote frontend, au lieu d'un 500 brut. 126 tests backend.
+- **Selecteurs E2E resserres** : `/se connecter/i` remplace par un match exact,
+  sinon il matcherait aussi « Se connecter avec SSO » en contexte OIDC (mode
+  strict Playwright).
+- Le stub utilise `ThreadingHTTPServer` : les connexions speculatives de
+  Chromium (preconnect) bloquaient un serveur mono-thread pendant l'appel du
+  token endpoint par le backend.
+
 ## v0.15.0 — 20 juillet 2026
 
 - **Page de login trilingue** : dernier ecran encore monolingue, desormais
