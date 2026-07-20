@@ -151,10 +151,12 @@ TABLE_CATALOG: tuple[TableDefinition, ...] = (
     TableDefinition(
         name="customers",
         label="Clients",
-        description="Referentiel client utilise pour mesurer la concentration du chiffre d'affaires.",
+        description="Referentiel client avec region et segment, utilise pour la concentration du CA et les analyses regionales.",
         columns=(
             ColumnDefinition("id", "Identifiant client", "Cle technique du client."),
             ColumnDefinition("name", "Nom client", "Nom affiche dans les analyses commerciales."),
+            ColumnDefinition("region", "Region", "Zone geographique du client."),
+            ColumnDefinition("segment", "Segment", "Type de clientele (PME, ETI, grand compte)."),
         ),
     ),
 )
@@ -489,12 +491,14 @@ INTENTS: tuple[IntentDefinition, ...] = (
         label="Retours",
         description="Classe les produits ou articles selon volumes de retours, motifs et reclamations.",
         keywords=(
+            # NB : les mots "motif(s)" / "Grund" / "reason" appartiennent a
+            # l'intention return_reasons (repartition par motif), pas ici.
             "retour", "retours", "taux", "produit", "produits", "article",
-            "articles", "qualite", "motif", "motifs", "sav", "defectueux",
+            "articles", "qualite", "sav", "defectueux",
             "remboursement", "reclamation", "reclamations",
             # Allemand
             "retoure", "retouren", "rucksendung", "rucksendungen", "rucklaufe",
-            "reklamation", "reklamationen", "grund", "grunde",
+            "reklamation", "reklamationen",
             "produkt", "produkte", "artikel",
             # Anglais
             "return", "returns", "rate", "refund", "complaint", "complaints",
@@ -619,6 +623,145 @@ INTENTS: tuple[IntentDefinition, ...] = (
         chart=ChartSpec(type="bar", x="produit", y="ecart", title="Ecarts du dernier mois"),
         explanation="La requete remonte les plus grands ecarts entre le dernier mois disponible et la moyenne observee.",
     ),
+    IntentDefinition(
+        id="regional_performance",
+        label="Performance regionale",
+        description="Compare le chiffre d'affaires et la marge par region et segment de clientele.",
+        keywords=(
+            "region", "regions", "regional", "regionale", "regionales",
+            "zone", "zones", "geographique", "geographiques", "segment",
+            "segments", "marge", "chiffre", "affaires", "ca", "ventes",
+            # Allemand
+            "regionen", "gebiet", "gebiete", "verkaufsgebiet", "segmente",
+            "umsatz", "erzielen", "erzielt",
+            # Anglais
+            "area", "areas", "territory", "territories", "revenue", "sales",
+            "generate", "generates",
+        ),
+        sql={
+            "sqlite": """
+                SELECT
+                  c.region AS region,
+                  c.segment AS segment,
+                  COUNT(*) AS commandes,
+                  ROUND(SUM(o.revenue), 2) AS chiffre_affaires,
+                  ROUND(SUM(o.revenue - o.cost), 2) AS marge,
+                  ROUND(100.0 * SUM(o.revenue) / (SELECT SUM(revenue) FROM orders), 2) AS part_ca
+                FROM orders o
+                JOIN customers c ON c.id = o.customer_id
+                WHERE o.order_date >= '{since_date}'
+                GROUP BY c.region, c.segment
+                ORDER BY chiffre_affaires DESC
+                LIMIT {top_n}
+            """,
+            "postgres": """
+                SELECT
+                  c.region AS region,
+                  c.segment AS segment,
+                  COUNT(*) AS commandes,
+                  ROUND(SUM(o.revenue), 2) AS chiffre_affaires,
+                  ROUND(SUM(o.revenue - o.cost), 2) AS marge,
+                  ROUND(100.0 * SUM(o.revenue) / (SELECT SUM(revenue) FROM orders), 2) AS part_ca
+                FROM orders o
+                JOIN customers c ON c.id = o.customer_id
+                WHERE o.order_date >= DATE '{since_date}'
+                GROUP BY c.region, c.segment
+                ORDER BY chiffre_affaires DESC
+                LIMIT {top_n}
+            """,
+        },
+        chart=ChartSpec(type="bar", x="region", y="chiffre_affaires", title="Chiffre d'affaires par region"),
+        explanation="La requete agrege chiffre d'affaires et marge par region et segment de clientele.",
+    ),
+    IntentDefinition(
+        id="return_reasons",
+        label="Motifs de retour",
+        description="Repartit les retours selon leur motif declare pour cibler les causes racines.",
+        keywords=(
+            "motif", "motifs", "raison", "raisons", "pourquoi", "cause",
+            "causes", "retour", "retours", "retournent", "renvoient",
+            # Allemand
+            "grund", "grunde", "warum", "ursache", "ursachen", "weshalb",
+            "retoure", "retouren", "zuruckgeschickt", "zuruckgegeben",
+            # Anglais
+            "reason", "reasons", "why", "return", "returns", "returned",
+            "cause", "causes",
+        ),
+        sql={
+            "sqlite": """
+                SELECT
+                  r.reason AS motif,
+                  COUNT(*) AS retours,
+                  SUM(r.quantity) AS quantite_retournee,
+                  ROUND(100.0 * SUM(r.quantity) / (SELECT SUM(quantity) FROM returns), 2) AS part_quantite
+                FROM returns r
+                WHERE r.returned_at >= '{since_date}'
+                GROUP BY r.reason
+                ORDER BY quantite_retournee DESC
+                LIMIT {top_n}
+            """,
+            "postgres": """
+                SELECT
+                  r.reason AS motif,
+                  COUNT(*) AS retours,
+                  SUM(r.quantity) AS quantite_retournee,
+                  ROUND(100.0 * SUM(r.quantity) / (SELECT SUM(quantity) FROM returns), 2) AS part_quantite
+                FROM returns r
+                WHERE r.returned_at >= DATE '{since_date}'
+                GROUP BY r.reason
+                ORDER BY quantite_retournee DESC
+                LIMIT {top_n}
+            """,
+        },
+        chart=ChartSpec(type="bar", x="motif", y="quantite_retournee", title="Retours par motif"),
+        explanation="La requete repartit les quantites retournees par motif declare, avec la part de chaque motif.",
+    ),
+    IntentDefinition(
+        id="avg_order_value",
+        label="Panier moyen",
+        description="Mesure la valeur moyenne des commandes par client et segment.",
+        keywords=(
+            "panier", "paniers", "moyen", "moyenne", "moyennes", "valeur",
+            "commande", "commandes", "montant",
+            # Allemand
+            "warenkorb", "bestellwert", "durchschnitt", "durchschnittlich",
+            "durchschnittliche", "durchschnittlicher", "bestellung", "bestellungen",
+            # Anglais
+            "basket", "average", "order", "orders", "value", "aov",
+        ),
+        sql={
+            "sqlite": """
+                SELECT
+                  c.name AS client,
+                  c.segment AS segment,
+                  COUNT(*) AS commandes,
+                  ROUND(AVG(o.revenue), 2) AS panier_moyen,
+                  ROUND(SUM(o.revenue), 2) AS chiffre_affaires
+                FROM orders o
+                JOIN customers c ON c.id = o.customer_id
+                WHERE o.order_date >= '{since_date}'
+                GROUP BY c.id
+                ORDER BY panier_moyen DESC
+                LIMIT {top_n}
+            """,
+            "postgres": """
+                SELECT
+                  c.name AS client,
+                  c.segment AS segment,
+                  COUNT(*) AS commandes,
+                  ROUND(AVG(o.revenue), 2) AS panier_moyen,
+                  ROUND(SUM(o.revenue), 2) AS chiffre_affaires
+                FROM orders o
+                JOIN customers c ON c.id = o.customer_id
+                WHERE o.order_date >= DATE '{since_date}'
+                GROUP BY c.id, c.name, c.segment
+                ORDER BY panier_moyen DESC
+                LIMIT {top_n}
+            """,
+        },
+        chart=ChartSpec(type="bar", x="client", y="panier_moyen", title="Panier moyen par client"),
+        explanation="La requete calcule la valeur moyenne des commandes par client, avec segment et volume.",
+    ),
 )
 
 EXAMPLE_QUESTIONS = [
@@ -632,6 +775,9 @@ EXAMPLE_QUESTIONS = [
     "Quels produits ont le taux de retour le plus eleve ?",
     "Quels clients representent l'essentiel du CA ?",
     "Qu'est-ce qui a change anormalement le mois dernier ?",
+    "Quelles regions generent le plus de chiffre d'affaires ?",
+    "Quels sont les principaux motifs de retour ?",
+    "Quel est le panier moyen par client ?",
 ]
 
 EXAMPLE_BY_INTENT_ID = {
@@ -718,6 +864,9 @@ PARAM_SPECS: dict[str, dict[str, object]] = {
     "returns_rate": {"top_n": 50, "since_date": "2026-03-01"},
     "customer_concentration": {"top_n": 50},
     "anomaly_detection": {"top_n": 50},
+    "regional_performance": {"top_n": 50, "since_date": "2026-01-01"},
+    "return_reasons": {"top_n": 50, "since_date": "2026-03-01"},
+    "avg_order_value": {"top_n": 50, "since_date": "2026-01-01"},
 }
 
 

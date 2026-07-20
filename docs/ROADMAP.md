@@ -315,9 +315,23 @@ Version livree: `v0.15.0`.
 - Page de login trilingue : dernier ecran encore monolingue, traduit FR/EN/DE via `i18n.tsx` (labels, boutons, sous-titre, erreurs d'authentification, bloc SSO) avec son propre selecteur de langue.
 - Langue persistee dans `localStorage` (`fabriq_lang`) : survit au rechargement et se propage de la page de login vers l'application.
 
+## Jalon 19 - V16 perimetre metier elargi v0.16.0
+
+Version en cours (non taguee).
+
+- E2E du parcours SSO en CI contre le stub OIDC versionne (`backend/scripts/oidc_stub.py`), projet Playwright `sso` active par `E2E_SSO=1`.
+- Trois nouvelles familles de questions (13 au total), sur des dimensions du schema jusque-la inexploitees :
+  - `regional_performance` — CA et marge par region et segment client (`customers.region`/`segment`) ;
+  - `return_reasons` — repartition des retours par motif (`returns.reason`), mots-cles motif/Grund/reason deplaces depuis `returns_rate` ;
+  - `avg_order_value` — panier moyen par client et segment.
+- Chaque famille : mots-cles FR/DE/EN, templates SQLite + PostgreSQL, parametres (top N, fenetre en mois), entree catalogue, exemples UI dans les trois langues.
+- Evaluation etendue : golden 49 (le cas "motifs de retour" attend desormais la vraie repartition par motif), allemand 18, anglais 18 — 95 cas au total.
+- Correctif : le filtre d'audit `stock_aging` ne correspondait pas a l'id backend `stock_ageing` (filtre sans effet depuis sa creation).
+
 ## Horizon suivant
 
-Prochaine version possible: `v0.16.0`.
+Prochaine version possible: `v0.17.0`.
 
 - Demo en ligne optionnelle.
 - Mapping SSO par attributs utilisateur / groupes Keycloak (les mappers de demo utilisent des claims fixes).
+- Famille "structure de couts" (necessite d'enrichir le seed `costs` : un seul `cost_type` aujourd'hui).

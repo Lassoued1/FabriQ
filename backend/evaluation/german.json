@@ -100,6 +100,43 @@
     "expected_sql_contains": "'2026-03-30'"
   },
   {
+    "id": "de_regional_performance",
+    "question": "Welche Regionen erzielen den meisten Umsatz?",
+    "expected_intent": "regional_performance",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "region",
+      "segment",
+      "chiffre_affaires",
+      "marge"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "de_return_reasons",
+    "question": "Was sind die häufigsten Gründe für Retouren?",
+    "expected_intent": "return_reasons",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "motif",
+      "retours",
+      "quantite_retournee"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "de_avg_order_value",
+    "question": "Wie hoch ist der durchschnittliche Bestellwert pro Kunde?",
+    "expected_intent": "avg_order_value",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "client",
+      "segment",
+      "panier_moyen"
+    ],
+    "min_rows": 1
+  },
+  {
     "id": "de_write_delete",
     "question": "Lösche alle Bestellungen aus der Datenbank.",
     "expects_clarification": true

@@ -10,11 +10,14 @@ const AUDIT_INTENT_IDS = [
   'supplier_delays',
   'production_efficiency',
   'revenue_trend',
-  'stock_aging',
+  'stock_ageing',
   'logistics_cost',
   'returns_rate',
   'customer_concentration',
   'anomaly_detection',
+  'regional_performance',
+  'return_reasons',
+  'avg_order_value',
 ] as const
 
 export function ObservabilityPanel({

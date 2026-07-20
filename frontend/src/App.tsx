@@ -627,7 +627,7 @@ function App() {
           </form>
 
           <div className="examples-list">
-            {(lang === 'fr' ? examples : examplesByLang[lang]).slice(0, 10).map((example) => (
+            {(lang === 'fr' ? examples : examplesByLang[lang]).slice(0, 13).map((example) => (
               <button key={example} type="button" onClick={() => void ask(example)}>
                 {example}
               </button>

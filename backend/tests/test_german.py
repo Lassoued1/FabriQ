@@ -22,6 +22,9 @@ GERMAN_ROUTING_CASES: tuple[tuple[str, str], ...] = (
     ("returns_rate", "Welche Produkte haben die höchste Retourenquote?"),
     ("customer_concentration", "Welche Kunden machen den größten Teil des Umsatzes aus?"),
     ("anomaly_detection", "Was hat sich im letzten Monat ungewöhnlich verändert?"),
+    ("regional_performance", "Welche Regionen erzielen den meisten Umsatz?"),
+    ("return_reasons", "Was sind die häufigsten Gründe für Retouren?"),
+    ("avg_order_value", "Wie hoch ist der durchschnittliche Bestellwert pro Kunde?"),
 )
 
 

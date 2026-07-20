@@ -26,25 +26,25 @@ FabriQ turns a business question into a validated SQL query, executes that query
 
 ## Feature overview
 
-- **Analytics core** — natural-language questions, a hybrid deterministic/LLM-assisted router, a semantic layer covering 10 families of industrial questions (margin, stockouts, supplier delays, production, revenue, inventory, logistics, returns, customers, anomalies), and business-readable answers with tables and charts.
+- **Analytics core** — natural-language questions, a hybrid deterministic/LLM-assisted router, a semantic layer covering 13 families of industrial questions (margin, stockouts, supplier delays, production, revenue, inventory, logistics, returns, return reasons, customers, regions, average order value, anomalies), and business-readable answers with tables and charts.
 - **Multi-user & security** — JWT authentication, multi-tenant data isolation, role-based access (admin/user), rate limiting.
 - **Alerts & observability** — scheduled alert rules with webhook/Slack/email notifications, a filterable audit log with CSV/Excel export, Prometheus metrics, and a provisioned Grafana dashboard.
 - **Quality** — a layered test suite and a dedicated evaluation harness, both running in CI on every push (see below).
 
 ## Evaluation
 
-Correctness is measured against a purpose-built harness — **four suites, 83 cases, all passing**:
+Correctness is measured against a purpose-built harness — **four suites, 95 cases, all passing**:
 
 | Suite | Result | Purpose |
 |---|---|---|
-| Golden | 43/43 | Curated reference questions with known-correct results. Baseline accuracy. |
+| Golden | 49/49 | Curated reference questions with known-correct results. Baseline accuracy. |
 | Paraphrases | 10/10 | Same business questions, reworded. Robustness against phrasing variance. |
-| German | 15/15 | German-language questions against the same data. |
-| English | 15/15 | English-language questions against the same data. |
+| German | 18/18 | German-language questions against the same data. |
+| English | 18/18 | English-language questions against the same data. |
 
 Each report records, per case: the generated SQL, the detected intent, the row count, and the selected chart type — so a failure shows *why*, not just that it failed.
 
-**Tests:** 107 backend tests (pytest), frontend unit tests (Vitest), and Playwright E2E suites (auth, analysis, observability). CI runs backend (pytest + ruff), frontend (tsc + build), a Docker smoke test, and E2E on every push. Load testing with Locust.
+**Tests:** 126 backend tests (pytest), frontend unit tests (Vitest), and Playwright E2E suites (auth, analysis, observability, SSO against a committed OIDC stub). CI runs backend (pytest + ruff), frontend (tsc + build), a Docker smoke test, and E2E on every push. Load testing with Locust.
 
 ## Architecture
 

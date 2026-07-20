@@ -27,8 +27,8 @@ describe('i18n', () => {
 
   it('propose des exemples dans les trois langues', () => {
     expect(examplesByLang.fr.length).toBeGreaterThan(0)
-    expect(examplesByLang.en.length).toBe(10)
-    expect(examplesByLang.de.length).toBe(10)
+    expect(examplesByLang.en.length).toBe(13)
+    expect(examplesByLang.de.length).toBe(13)
   })
 
   it('les exemples anglais sont bien en anglais (pas de residu francais)', () => {
@@ -40,7 +40,7 @@ describe('i18n', () => {
   it('les exemples allemands sont bien en allemand (pas de residu FR/EN)', () => {
     for (const q of examplesByLang.de) {
       expect(q).not.toMatch(/quels?|montre|which|show the/i)
-      expect(q).toMatch(/welche|zeige|was hat/i)
+      expect(q).toMatch(/welche|zeige|was|wie/i)
     }
   })
 })

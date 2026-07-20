@@ -22,6 +22,9 @@ ENGLISH_ROUTING_CASES: tuple[tuple[str, str], ...] = (
     ("returns_rate", "Which products have the highest return rate?"),
     ("customer_concentration", "Which customers account for the largest share of revenue?"),
     ("anomaly_detection", "What changed unusually last month?"),
+    ("regional_performance", "Which regions generate the most revenue?"),
+    ("return_reasons", "What are the main reasons for returns?"),
+    ("avg_order_value", "What is the average order value per customer?"),
 )
 
 

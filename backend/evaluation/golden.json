@@ -334,14 +334,13 @@
   {
     "id": "returns_rate_v3",
     "question": "Quels motifs de retour reviennent le plus souvent ?",
-    "expected_intent": "returns_rate",
+    "expected_intent": "return_reasons",
     "expected_chart_type": "bar",
     "required_columns": [
-      "produit",
-      "categorie",
-      "quantite_retournee",
+      "motif",
       "retours",
-      "motifs"
+      "quantite_retournee",
+      "part_quantite"
     ],
     "min_rows": 1
   },
@@ -481,5 +480,81 @@
     ],
     "min_rows": 1,
     "expected_sql_contains": "'2026-03-30'"
+  },
+  {
+    "id": "regional_performance",
+    "question": "Quelles regions generent le plus de chiffre d'affaires ?",
+    "expected_intent": "regional_performance",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "region",
+      "segment",
+      "commandes",
+      "chiffre_affaires",
+      "marge",
+      "part_ca"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "regional_performance_v2",
+    "question": "Compare la marge par region et segment client.",
+    "expected_intent": "regional_performance",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "region",
+      "segment",
+      "marge"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "return_reasons",
+    "question": "Quels sont les principaux motifs de retour ?",
+    "expected_intent": "return_reasons",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "motif",
+      "retours",
+      "quantite_retournee",
+      "part_quantite"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "return_reasons_v2",
+    "question": "Pourquoi les clients retournent-ils nos produits ?",
+    "expected_intent": "return_reasons",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "motif",
+      "quantite_retournee"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "avg_order_value",
+    "question": "Quel est le panier moyen par client ?",
+    "expected_intent": "avg_order_value",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "client",
+      "segment",
+      "commandes",
+      "panier_moyen",
+      "chiffre_affaires"
+    ],
+    "min_rows": 1
+  },
+  {
+    "id": "avg_order_value_v2",
+    "question": "Quelle est la valeur moyenne des commandes ?",
+    "expected_intent": "avg_order_value",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "client",
+      "panier_moyen"
+    ],
+    "min_rows": 1
   }
 ]

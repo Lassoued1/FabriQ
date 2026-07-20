@@ -4,6 +4,22 @@ Historique des versions de FabriQ. Le detail complet de chaque jalon est dans [d
 
 ## v0.16.0 — en cours (non taguee)
 
+- **Trois nouvelles familles de questions (13 au total)**, sur des dimensions
+  du schema jusque-la inexploitees :
+  - `regional_performance` — chiffre d'affaires et marge par region et segment
+    client (`customers.region`/`segment`) ;
+  - `return_reasons` — repartition des retours par motif (`returns.reason`) ;
+    les mots-cles motif/Grund/reason quittent `returns_rate`, et la question
+    golden « motifs de retour » recoit desormais une vraie repartition par
+    motif (avant : produits avec motifs concatenes) ;
+  - `avg_order_value` — panier moyen par client et segment.
+  Chaque famille : mots-cles FR/DE/EN, templates SQLite + PostgreSQL,
+  parametres, entree catalogue, exemples UI trilingues, cas d'evaluation.
+- **Evaluation etendue** : golden 49/49, paraphrases 10/10, allemand 18/18,
+  anglais 18/18 — 95 cas. 126 tests backend + 190 sous-tests.
+- **Correctif filtre d'audit** : l'id `stock_aging` du filtre ne correspondait
+  pas a l'id backend `stock_ageing` — ce filtre n'avait jamais matche aucun
+  evenement. Les 3 nouvelles familles rejoignent le filtre et le selecteur.
 - **E2E du SSO en CI** : le parcours SSO complet (bouton -> fournisseur ->
   callback -> app connectee) est desormais joue par Playwright a chaque push,
   contre un stub OIDC versionne (`backend/scripts/oidc_stub.py`) qui verifie

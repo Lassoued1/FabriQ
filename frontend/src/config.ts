@@ -27,6 +27,9 @@ export const examplesByLang: Record<'fr' | 'en' | 'de', string[]> = {
     'Which products have the highest return rate?',
     'Which customers account for the largest share of revenue?',
     'What changed unusually last month?',
+    'Which regions generate the most revenue?',
+    'What are the main reasons for returns?',
+    'What is the average order value per customer?',
   ],
   de: [
     'Bei welchen Produkten ist die Marge im letzten Quartal gesunken?',
@@ -39,5 +42,8 @@ export const examplesByLang: Record<'fr' | 'en' | 'de', string[]> = {
     'Welche Produkte haben die höchste Retourenquote?',
     'Welche Kunden machen den größten Teil des Umsatzes aus?',
     'Was hat sich im letzten Monat ungewöhnlich verändert?',
+    'Welche Regionen erzielen den meisten Umsatz?',
+    'Was sind die häufigsten Gründe für Retouren?',
+    'Wie hoch ist der durchschnittliche Bestellwert pro Kunde?',
   ],
 }
