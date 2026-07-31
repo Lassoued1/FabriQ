@@ -120,7 +120,7 @@ TABLE_CATALOG: tuple[TableDefinition, ...] = (
             ColumnDefinition("id", "Identifiant mouvement", "Cle technique du mouvement."),
             ColumnDefinition("product_id", "Produit", "Produit concerne par le mouvement."),
             ColumnDefinition("happened_at", "Date du mouvement", "Date du dernier flux connu."),
-            ColumnDefinition("quantity_delta", "Variation de stock", "Quantite ajoutee ou retiree du stock."),
+            ColumnDefinition("quantity", "Quantite mouvementee", "Quantite ajoutee ou retiree du stock."),
         ),
     ),
     TableDefinition(

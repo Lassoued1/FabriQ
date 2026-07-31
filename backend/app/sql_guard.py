@@ -22,6 +22,42 @@ ALLOWED_TABLES = {
     "costs",
 }
 
+# Allowlist de colonnes, par table (couche L4 du cahier des charges).
+# `tenant_id` n'existe que sur le schema PostgreSQL : il est injecte cote
+# serveur par inject_tenant_filter(), jamais fourni par le client.
+ALLOWED_COLUMNS: dict[str, frozenset[str]] = {
+    "products": frozenset({
+        "id", "reference", "category", "price", "cost",
+        "safety_stock", "current_stock", "created_at",
+    }),
+    "customers": frozenset({"id", "name", "region", "segment", "tenant_id"}),
+    "orders": frozenset({
+        "id", "customer_id", "product_id", "order_date",
+        "quantity", "revenue", "cost", "tenant_id",
+    }),
+    "production_batches": frozenset({
+        "id", "product_id", "line", "produced_at", "volume", "defects",
+    }),
+    "inventory_movements": frozenset({
+        "id", "product_id", "movement_type", "quantity", "happened_at",
+    }),
+    "suppliers": frozenset({"id", "name", "punctuality_rate", "lead_time_days"}),
+    "supplier_delays": frozenset({
+        "id", "supplier_id", "product_id", "delivery_date", "delay_days",
+    }),
+    "shipments": frozenset({
+        "id", "route", "carrier", "shipped_at", "cost", "delay_days",
+    }),
+    "returns": frozenset({
+        "id", "product_id", "customer_id", "returned_at", "quantity", "reason",
+    }),
+    "costs": frozenset({"id", "product_id", "period", "cost_type", "amount"}),
+}
+
+# Union de toutes les colonnes connues : sert aux references non qualifiees,
+# dont la table d'origine n'est pas determinable sans resolution de portee.
+_ANY_ALLOWED_COLUMN: frozenset[str] = frozenset().union(*ALLOWED_COLUMNS.values())
+
 # Defense en profondeur : scan textuel conserve en plus de l'analyse AST.
 BLOCKED_KEYWORDS = {
     "alter",
@@ -127,7 +163,14 @@ def validate_sql(sql: str) -> GuardResult:
     else:
         blocked.append("Aucune table referencee.")
 
-    # 6. LIMIT obligatoire sur le SELECT racine, entier litteral et borne.
+    # 6. Colonnes limitees a l'allowlist (par table quand la reference est qualifiee).
+    forbidden_columns = _forbidden_columns(tree)
+    if forbidden_columns:
+        blocked.append(f"Colonnes non autorisees: {', '.join(forbidden_columns)}.")
+    else:
+        checks.append("Colonnes limitees au catalogue autorise.")
+
+    # 7. LIMIT obligatoire sur le SELECT racine, entier litteral et borne.
     limit_value = _literal_limit(tree.args.get("limit"))
     if limit_value is None:
         blocked.append("LIMIT obligatoire (entier litteral) pour borner le resultat.")
@@ -146,6 +189,48 @@ def execute_readonly(connection: sqlite3.Connection, sql: str) -> list[dict[str,
 
     cursor = connection.execute(sql)
     return [dict(row) for row in cursor.fetchall()]
+
+
+def _forbidden_columns(tree: exp.Expression) -> list[str]:
+    """Colonnes referencees qui ne figurent pas dans l'allowlist.
+
+    Une reference qualifiee (`o.revenue`) est verifiee contre les colonnes de
+    sa table d'origine, l'alias etant resolu depuis le FROM/JOIN. Une reference
+    non qualifiee est acceptee si elle appartient a une table du catalogue ou
+    s'il s'agit d'un alias defini par la requete elle-meme (`AS taux_marge`,
+    reutilise en GROUP BY / ORDER BY / HAVING).
+    """
+    # alias (ou nom de table) -> nom de table reel
+    sources: dict[str, str] = {}
+    for table in tree.find_all(exp.Table):
+        name = table.name.lower()
+        sources[name] = name
+        if table.alias:
+            sources[table.alias.lower()] = name
+
+    # Alias de projection definis par la requete : SELECT ... AS x
+    query_aliases = {
+        alias.alias.lower() for alias in tree.find_all(exp.Alias) if alias.alias
+    }
+
+    forbidden: set[str] = set()
+    for column in tree.find_all(exp.Column):
+        name = column.name.lower()
+        if not name or name == "*":
+            continue
+
+        qualifier = (column.table or "").lower()
+        if qualifier:
+            source = sources.get(qualifier)
+            # Alias inconnu : on retombe sur l'union, la table etant de toute
+            # facon deja filtree par l'allowlist des tables.
+            allowed = ALLOWED_COLUMNS.get(source, _ANY_ALLOWED_COLUMN) if source else _ANY_ALLOWED_COLUMN
+            if name not in allowed:
+                forbidden.add(f"{qualifier}.{name}")
+        elif name not in _ANY_ALLOWED_COLUMN and name not in query_aliases:
+            forbidden.add(name)
+
+    return sorted(forbidden)
 
 
 def _literal_limit(limit_node: exp.Expression | None) -> int | None:

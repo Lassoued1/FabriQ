@@ -7,7 +7,7 @@
 
 FabriQ is an analytics assistant for industrial SMEs: ask a question in natural language, get a safe SQL query, executed read-only, then a readable answer with table, chart, visible SQL, and an operational explanation.
 
-**Current version: v0.15.0** — natural-language questions in French, German and English driving parameterized queries, an SQL guardrail backed by a read-only database role, multi-user, multi-tenant, optional OIDC SSO (Keycloak), LangGraph orchestration, scheduled alerts, generic outgoing webhooks (HMAC-signed, SSRF-guarded), a trilingual FR/EN/DE interface (login page included, language persisted), Prometheus/Grafana observability, CI and E2E tests.
+**Current version: v0.16.0** — natural-language questions in French, German and English driving parameterized queries across 13 business families, an AST-based SQL guardrail (table and column allowlists) backed by a read-only database role, multi-user, multi-tenant, optional OIDC SSO (Keycloak) covered end-to-end in CI, LangGraph orchestration, scheduled alerts, generic outgoing webhooks (HMAC-signed, SSRF-guarded), a trilingual FR/EN/DE interface (login page included, language persisted), Prometheus/Grafana observability, CI and E2E tests.
 
 ![FabriQ demo](docs/assets/fabriq-v0.15.0-demo.gif)
 
@@ -27,7 +27,7 @@ FabriQ turns a business question into a validated SQL query, executes that query
 ## Feature overview
 
 - **Analytics core** — natural-language questions, a hybrid deterministic/LLM-assisted router, a semantic layer covering 13 families of industrial questions (margin, stockouts, supplier delays, production, revenue, inventory, logistics, returns, return reasons, customers, regions, average order value, anomalies), and business-readable answers with tables and charts.
-- **SQL governance** — an AST-based guardrail (sqlglot): single statement, pure `SELECT`, table allowlist enforced across the whole tree including subqueries, literal bounded `LIMIT`, `EXPLAIN` preflight and a query timeout — all backed by a dedicated read-only PostgreSQL role.
+- **SQL governance** — an AST-based guardrail (sqlglot): single statement, pure `SELECT`, table **and column** allowlists enforced across the whole tree including subqueries, literal bounded `LIMIT`, `EXPLAIN` preflight and a query timeout — all backed by a dedicated read-only PostgreSQL role.
 - **Trilingual** — questions in French, German and English, and an interface (login page included) that switches between the three, with the choice persisted.
 - **Multi-user & security** — JWT authentication, optional OIDC SSO (Keycloak, authorization code + PKCE), multi-tenant data isolation, role-based access (admin/user), rate limiting.
 - **Alerts & webhooks** — scheduled alert rules with Slack/email notifications, plus a generic outgoing webhook system: per-tenant subscriptions by event type, HMAC-SHA256 signatures, retries with backoff, an anti-SSRF guard and a delivery log.
@@ -47,9 +47,9 @@ Correctness is measured against a purpose-built harness — **four suites, 95 ca
 
 Each report records, per case: the generated SQL, the detected intent, the row count, and the selected chart type — so a failure shows *why*, not just that it failed.
 
-**Adversarial suite:** 24 injection attempts (stacked statements, `UNION` exfiltration, CTE smuggling, comment obfuscation, unlisted tables, non-literal `LIMIT`, write statements) — all 24 blocked, with 3 control queries confirming legitimate SQL still passes.
+**Adversarial suite:** 31 injection attempts (stacked statements, `UNION` exfiltration, CTE smuggling, comment obfuscation, unlisted tables and columns, non-literal `LIMIT`, write statements) — all 31 blocked, with 5 control queries confirming legitimate SQL still passes.
 
-**Tests:** 126 backend tests (pytest), frontend unit tests (Vitest), and Playwright E2E suites (auth, analysis, observability, and a full SSO journey against a committed OIDC stub that really verifies PKCE). CI runs backend (pytest + ruff), frontend (tsc + build), a Docker smoke test, and E2E on every push. Load testing with Locust.
+**Tests:** 130 backend tests (pytest), frontend unit tests (Vitest), and Playwright E2E suites (auth, analysis, observability, and a full SSO journey against a committed OIDC stub that really verifies PKCE). CI runs backend (pytest + ruff), frontend (tsc + build), a Docker smoke test, and E2E on every push. Load testing with Locust.
 
 ## Architecture
 
@@ -137,6 +137,7 @@ A blocklist of keywords is trivially defeated by comments, casing or nesting. `s
 | Root node is `exp.Select` | `INSERT`, `UPDATE`, `DELETE`, `DROP` |
 | No `WITH` / `CTE` / `UNION` / locking clauses | CTE smuggling, `UNION SELECT` exfiltration |
 | Table allowlist walked over `find_all(exp.Table)` | Unlisted or system tables, including inside subqueries |
+| Column allowlist, per table, with alias resolution | `o.password`, and even `o.reference` — a real column, but not on `orders` |
 | `LIMIT` present, literal, and bounded | `LIMIT (SELECT ...)`, unbounded scans |
 
 A textual scan is kept as defence in depth, then `EXPLAIN` (or `EXPLAIN QUERY PLAN` on SQLite) runs as a preflight, and execution is capped by `FABRIQ_QUERY_TIMEOUT_SECONDS`. Underneath it all, the PostgreSQL role `fabriq_readonly` simply has no write grant — so even a hypothetical guardrail bypass cannot mutate data. The 24-case adversarial suite pins this behaviour.

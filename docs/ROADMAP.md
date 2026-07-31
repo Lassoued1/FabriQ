@@ -4,7 +4,7 @@ FabriQ est un assistant d'analyse pour PME industrielles: une question en langag
 
 ## Etat actuel
 
-Version stabilisee: `FabriQ v0.15.0` (taguee le 20 juillet 2026).
+Version stabilisee: `FabriQ v0.16.0` (taguee le 31 juillet 2026).
 
 | Jalon | Etat | Commentaire |
 | --- | --- | --- |
@@ -27,6 +27,7 @@ Version stabilisee: `FabriQ v0.15.0` (taguee le 20 juillet 2026).
 | Jalon 16 - V13 webhooks sortants v0.13.0 | Termine | Webhooks generiques par evenement, signature HMAC, reessais, garde SSRF, panneau UI, i18n FR/EN, 107 tests. |
 | Jalon 17 - V14 trilingue UI et SSO v0.14.0 | Termine | UI en allemand (FR/EN/DE), SSO OIDC optionnel (Keycloak, PKCE, JWKS), 125 tests. |
 | Jalon 18 - V15 login trilingue et langue persistee v0.15.0 | Termine | Page de login traduite FR/EN/DE, choix de langue persiste dans localStorage. |
+| Jalon 19 - V16 perimetre metier elargi v0.16.0 | Termine | E2E du parcours SSO en CI, 3 nouvelles familles (13 au total), allowlist de colonnes (L4), 130 tests. |
 
 ## Objectif MVP
 
@@ -317,7 +318,7 @@ Version livree: `v0.15.0`.
 
 ## Jalon 19 - V16 perimetre metier elargi v0.16.0
 
-Version en cours (non taguee).
+Version livree: `v0.16.0`.
 
 - E2E du parcours SSO en CI contre le stub OIDC versionne (`backend/scripts/oidc_stub.py`), projet Playwright `sso` active par `E2E_SSO=1`.
 - Trois nouvelles familles de questions (13 au total), sur des dimensions du schema jusque-la inexploitees :
@@ -327,6 +328,8 @@ Version en cours (non taguee).
 - Chaque famille : mots-cles FR/DE/EN, templates SQLite + PostgreSQL, parametres (top N, fenetre en mois), entree catalogue, exemples UI dans les trois langues.
 - Evaluation etendue : golden 49 (le cas "motifs de retour" attend desormais la vraie repartition par motif), allemand 18, anglais 18 — 95 cas au total.
 - Correctif : le filtre d'audit `stock_aging` ne correspondait pas a l'id backend `stock_ageing` (filtre sans effet depuis sa creation).
+- Allowlist de colonnes (couche L4 du cahier des charges, seul ecart restant vs la specification) : validation par table avec resolution d'alias, +7 cas adversariaux, et un test rendant les 13 templates dans les deux dialectes pour detecter en CI toute colonne oubliee.
+- Correctif catalogue : `inventory_movements.quantity_delta` (colonne inexistante) -> `quantity`, verrouille par test.
 
 ## Horizon suivant
 

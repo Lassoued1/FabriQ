@@ -1,6 +1,6 @@
 # FabriQ - Architecture
 
-Document aligne sur la v0.14.0. Le coeur du systeme reste deterministe, auditable et protege par un garde-fou SQL: le LLM local est optionnel et cantonne au routage d'intention.
+Document aligne sur la v0.16.0. Le coeur du systeme reste deterministe, auditable et protege par un garde-fou SQL: le LLM local est optionnel et cantonne au routage d'intention.
 
 ## Vue d'ensemble
 
@@ -85,7 +85,7 @@ Document aligne sur la v0.14.0. Le coeur du systeme reste deterministe, auditabl
 ## Securite
 
 - **Base**: role PostgreSQL `fabriq_readonly` sans aucun droit d'ecriture.
-- **Application**: parseur AST (sqlglot) — instruction unique, SELECT pur, allowlist appliquee a l'arbre (y compris sous-requetes), LIMIT litteral borne, EXPLAIN prealable, timeout de requete (`FABRIQ_QUERY_TIMEOUT_SECONDS`).
+- **Application**: parseur AST (sqlglot) — instruction unique, SELECT pur, allowlists de tables **et de colonnes** appliquees a l'arbre (y compris sous-requetes ; les references qualifiees sont validees contre leur table d'origine apres resolution d'alias), LIMIT litteral borne, EXPLAIN prealable, timeout de requete (`FABRIQ_QUERY_TIMEOUT_SECONDS`).
 - **API**: JWT obligatoire sur toutes les routes metier, roles admin, rate limiting login/ask.
 - **Isolation**: filtrage SQL par `tenant_id` injecte cote serveur, jamais fourni par le client.
 - **LLM**: aucun acces a la base, aucune generation de SQL, sortie contrainte au catalogue d'intentions.

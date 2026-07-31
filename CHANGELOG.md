@@ -2,8 +2,24 @@
 
 Historique des versions de FabriQ. Le detail complet de chaque jalon est dans [docs/ROADMAP.md](docs/ROADMAP.md).
 
-## v0.16.0 — en cours (non taguee)
+## v0.16.0 — 31 juillet 2026
 
+- **Allowlist de colonnes (couche L4 du cahier des charges)** : le garde-fou ne
+  se limitait qu'aux tables ; il verifie desormais aussi chaque colonne
+  referencee (`ALLOWED_COLUMNS`, par table). Une reference qualifiee
+  (`o.revenue`) est validee contre les colonnes de sa table d'origine, l'alias
+  etant resolu depuis le FROM/JOIN — `o.reference` est donc refuse alors meme
+  que `reference` existe ailleurs. Les references non qualifiees sont acceptees
+  si elles appartiennent au catalogue ou s'il s'agit d'un alias de projection
+  defini par la requete (`AS taux_marge`, reutilise en GROUP BY / ORDER BY /
+  HAVING). +7 cas adversariaux (31 au total), tous bloques.
+- **Filet de securite CI** : un test rend les 13 templates dans les deux
+  dialectes et les passe au garde-fou — une future intention utilisant une
+  colonne absente de l'allowlist echoue en CI, pas devant l'utilisateur. Idem
+  pour les requetes apres injection du filtre multi-tenant.
+- **Correctif catalogue** : `inventory_movements` annoncait aux utilisateurs une
+  colonne `quantity_delta` inexistante (le vrai nom est `quantity`). Un test
+  verifie desormais que toute colonne documentee existe reellement.
 - **Trois nouvelles familles de questions (13 au total)**, sur des dimensions
   du schema jusque-la inexploitees :
   - `regional_performance` — chiffre d'affaires et marge par region et segment
