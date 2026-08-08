@@ -187,16 +187,29 @@ def _seed_data(connection: sqlite3.Connection) -> None:
             )
             order_id += 1
 
-            cost_rows.append(
-                (
-                    cost_id,
-                    product_id,
-                    month_start.strftime("%Y-%m"),
-                    "production",
-                    round(quantity * unit_cost * (0.09 + month_index * 0.004), 2),
-                )
+            # Ventilation du cout mensuel par poste. La qualite pese plus lourd
+            # sur les produits sujets aux defauts (3 et 5) et derive dans le
+            # temps, ce qui donne une structure de couts lisible a analyser.
+            cost_base = quantity * unit_cost
+            quality_share = 0.02 + (0.03 if product_id in {3, 5} else 0.01) + month_index * 0.002
+            cost_shares = (
+                ("matiere", 0.50),
+                ("main_oeuvre", 0.22),
+                ("logistique", 0.10),
+                ("qualite", quality_share),
+                ("frais_generaux", 0.08),
             )
-            cost_id += 1
+            for cost_type, share in cost_shares:
+                cost_rows.append(
+                    (
+                        cost_id,
+                        product_id,
+                        month_start.strftime("%Y-%m"),
+                        cost_type,
+                        round(cost_base * share, 2),
+                    )
+                )
+                cost_id += 1
 
             defects = int(quantity * (0.025 + (0.018 if product_id in {3, 5} else 0) + month_index * 0.003))
             batch_rows.append(

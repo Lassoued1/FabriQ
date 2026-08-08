@@ -159,6 +159,18 @@ TABLE_CATALOG: tuple[TableDefinition, ...] = (
             ColumnDefinition("segment", "Segment", "Type de clientele (PME, ETI, grand compte)."),
         ),
     ),
+    TableDefinition(
+        name="costs",
+        label="Couts",
+        description="Couts mensuels par produit, ventiles par poste (matiere, main-d'oeuvre, logistique, qualite, frais generaux).",
+        columns=(
+            ColumnDefinition("id", "Identifiant cout", "Cle technique de la ligne de cout."),
+            ColumnDefinition("product_id", "Produit", "Produit concerne par le cout."),
+            ColumnDefinition("period", "Periode", "Mois du cout au format AAAA-MM."),
+            ColumnDefinition("cost_type", "Poste de cout", "Nature du cout : matiere, main-d'oeuvre, logistique, qualite, frais generaux."),
+            ColumnDefinition("amount", "Montant", "Montant du cout pour ce produit, ce mois et ce poste."),
+        ),
+    ),
 )
 
 
@@ -762,6 +774,49 @@ INTENTS: tuple[IntentDefinition, ...] = (
         chart=ChartSpec(type="bar", x="client", y="panier_moyen", title="Panier moyen par client"),
         explanation="La requete calcule la valeur moyenne des commandes par client, avec segment et volume.",
     ),
+    IntentDefinition(
+        id="cost_structure",
+        label="Structure de couts",
+        description="Ventile les couts par poste (matiere, main-d'oeuvre, logistique, qualite, frais generaux) et donne la part de chacun.",
+        keywords=(
+            "structure", "ventilation", "ventile", "ventiles", "repartition",
+            "repartir", "repartissent", "composition", "poste", "postes",
+            "type", "types", "matiere", "matieres", "oeuvre", "generaux",
+            # Allemand
+            "kostenstruktur", "struktur", "kostenart", "kostenarten",
+            "aufschlusselung", "zusammensetzung", "kostenblock", "kostenblocke",
+            # Anglais
+            "breakdown", "makeup", "overhead", "labor", "labour",
+        ),
+        sql={
+            "sqlite": """
+                SELECT
+                  co.cost_type AS type_cout,
+                  ROUND(SUM(co.amount), 2) AS montant,
+                  ROUND(100.0 * SUM(co.amount)
+                        / (SELECT SUM(amount) FROM costs WHERE period >= substr('{since_date}', 1, 7)), 2) AS part
+                FROM costs co
+                WHERE co.period >= substr('{since_date}', 1, 7)
+                GROUP BY co.cost_type
+                ORDER BY montant DESC
+                LIMIT {top_n}
+            """,
+            "postgres": """
+                SELECT
+                  co.cost_type AS type_cout,
+                  ROUND(SUM(co.amount), 2) AS montant,
+                  ROUND(100.0 * SUM(co.amount)
+                        / (SELECT SUM(amount) FROM costs WHERE period >= substr('{since_date}', 1, 7)), 2) AS part
+                FROM costs co
+                WHERE co.period >= substr('{since_date}', 1, 7)
+                GROUP BY co.cost_type
+                ORDER BY montant DESC
+                LIMIT {top_n}
+            """,
+        },
+        chart=ChartSpec(type="bar", x="type_cout", y="montant", title="Structure de couts par poste"),
+        explanation="La requete additionne les couts par poste sur la periode et donne la part de chacun dans le total.",
+    ),
 )
 
 EXAMPLE_QUESTIONS = [
@@ -778,6 +833,7 @@ EXAMPLE_QUESTIONS = [
     "Quelles regions generent le plus de chiffre d'affaires ?",
     "Quels sont les principaux motifs de retour ?",
     "Quel est le panier moyen par client ?",
+    "Quelle est la structure de couts par poste ?",
 ]
 
 EXAMPLE_BY_INTENT_ID = {
@@ -867,6 +923,7 @@ PARAM_SPECS: dict[str, dict[str, object]] = {
     "regional_performance": {"top_n": 50, "since_date": "2026-01-01"},
     "return_reasons": {"top_n": 50, "since_date": "2026-03-01"},
     "avg_order_value": {"top_n": 50, "since_date": "2026-01-01"},
+    "cost_structure": {"top_n": 50, "since_date": "2026-01-01"},
 }
 
 

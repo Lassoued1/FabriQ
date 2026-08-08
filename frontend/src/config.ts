@@ -30,6 +30,7 @@ export const examplesByLang: Record<'fr' | 'en' | 'de', string[]> = {
     'Which regions generate the most revenue?',
     'What are the main reasons for returns?',
     'What is the average order value per customer?',
+    'What is the cost structure by type?',
   ],
   de: [
     'Bei welchen Produkten ist die Marge im letzten Quartal gesunken?',
@@ -45,5 +46,6 @@ export const examplesByLang: Record<'fr' | 'en' | 'de', string[]> = {
     'Welche Regionen erzielen den meisten Umsatz?',
     'Was sind die häufigsten Gründe für Retouren?',
     'Wie hoch ist der durchschnittliche Bestellwert pro Kunde?',
+    'Wie ist die Kostenstruktur nach Kostenart?',
   ],
 }

@@ -98,14 +98,27 @@ demand(product_id, quantities) AS (
 )
 INSERT INTO costs (id, product_id, period, cost_type, amount)
 SELECT
-  ROW_NUMBER() OVER (ORDER BY m.month_index, p.id),
+  ROW_NUMBER() OVER (ORDER BY m.month_index, p.id, ct.cost_type),
   p.id,
   TO_CHAR(m.month_start, 'YYYY-MM'),
-  'production',
-  ROUND(d.quantities[m.month_index + 1] * p.cost * (0.09 + m.month_index * 0.004), 2)
+  ct.cost_type,
+  ROUND(
+    (d.quantities[m.month_index + 1] * p.cost * (
+      CASE WHEN ct.cost_type = 'qualite'
+           THEN 0.02 + (CASE WHEN p.id IN (3, 5) THEN 0.03 ELSE 0.01 END) + m.month_index * 0.002
+           ELSE ct.base_share END
+    ))::numeric, 2)
 FROM months m
 JOIN products p ON TRUE
-JOIN demand d ON d.product_id = p.id;
+JOIN demand d ON d.product_id = p.id
+CROSS JOIN (
+  VALUES
+    ('matiere', 0.50),
+    ('main_oeuvre', 0.22),
+    ('logistique', 0.10),
+    ('qualite', 0.0),
+    ('frais_generaux', 0.08)
+) AS ct(cost_type, base_share);
 
 WITH months(month_index, month_start) AS (
   VALUES

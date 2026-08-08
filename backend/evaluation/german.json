@@ -147,6 +147,15 @@
     "expects_clarification": true
   },
   {
+    "id": "de_cost_structure",
+    "question": "Wie ist die Kostenstruktur nach Kostenart?",
+    "expected_intent": "cost_structure",
+    "expected_chart_type": "bar",
+    "required_columns": ["type_cout", "montant"],
+    "min_rows": 1,
+    "max_rows": 5
+  },
+  {
     "id": "de_oos_weather",
     "question": "Wie wird das Wetter morgen in Bregenz?",
     "expects_clarification": true

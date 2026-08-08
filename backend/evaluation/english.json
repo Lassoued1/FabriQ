@@ -147,6 +147,15 @@
     "expects_clarification": true
   },
   {
+    "id": "en_cost_structure",
+    "question": "What is the cost structure by type?",
+    "expected_intent": "cost_structure",
+    "expected_chart_type": "bar",
+    "required_columns": ["type_cout", "montant"],
+    "min_rows": 1,
+    "max_rows": 5
+  },
+  {
     "id": "en_oos_weather",
     "question": "What will the weather be tomorrow in Vienna?",
     "expects_clarification": true

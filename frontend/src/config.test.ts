@@ -27,8 +27,8 @@ describe('i18n', () => {
 
   it('propose des exemples dans les trois langues', () => {
     expect(examplesByLang.fr.length).toBeGreaterThan(0)
-    expect(examplesByLang.en.length).toBe(13)
-    expect(examplesByLang.de.length).toBe(13)
+    expect(examplesByLang.en.length).toBe(14)
+    expect(examplesByLang.de.length).toBe(14)
   })
 
   it('les exemples anglais sont bien en anglais (pas de residu francais)', () => {

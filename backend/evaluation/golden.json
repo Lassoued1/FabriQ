@@ -556,5 +556,30 @@
       "panier_moyen"
     ],
     "min_rows": 1
+  },
+  {
+    "id": "cost_structure",
+    "question": "Quelle est la structure de couts par poste ?",
+    "expected_intent": "cost_structure",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "type_cout",
+      "montant",
+      "part"
+    ],
+    "min_rows": 1,
+    "max_rows": 5
+  },
+  {
+    "id": "cost_structure_v2",
+    "question": "Comment se repartissent les couts par type ?",
+    "expected_intent": "cost_structure",
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "type_cout",
+      "montant"
+    ],
+    "min_rows": 1,
+    "max_rows": 5
   }
 ]
