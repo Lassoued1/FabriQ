@@ -7,7 +7,7 @@
 
 FabriQ is an analytics assistant for industrial SMEs: ask a question in natural language, get a safe SQL query, executed read-only, then a readable answer with table, chart, visible SQL, and an operational explanation.
 
-**Current version: v0.16.0** — natural-language questions in French, German and English driving parameterized queries across 13 business families, an AST-based SQL guardrail (table and column allowlists) backed by a read-only database role, multi-user, multi-tenant, optional OIDC SSO (Keycloak) covered end-to-end in CI, LangGraph orchestration, scheduled alerts, generic outgoing webhooks (HMAC-signed, SSRF-guarded), a trilingual FR/EN/DE interface (login page included, language persisted), Prometheus/Grafana observability, CI and E2E tests.
+**Current version: v0.17.0** — natural-language questions in French, German and English driving parameterized queries across 14 business families, an AST-based SQL guardrail (table and column allowlists) backed by a read-only database role, multi-user, multi-tenant, optional OIDC SSO (Keycloak) covered end-to-end in CI, LangGraph orchestration, scheduled alerts, generic outgoing webhooks (HMAC-signed, SSRF-guarded), a trilingual FR/EN/DE interface (login page included, language persisted), Prometheus/Grafana observability, CI and E2E tests.
 
 ![FabriQ demo](docs/assets/fabriq-v0.15.0-demo.gif)
 
@@ -26,7 +26,7 @@ FabriQ turns a business question into a validated SQL query, executes that query
 
 ## Feature overview
 
-- **Analytics core** — natural-language questions, a hybrid deterministic/LLM-assisted router, a semantic layer covering 13 families of industrial questions (margin, stockouts, supplier delays, production, revenue, inventory, logistics, returns, return reasons, customers, regions, average order value, anomalies), and business-readable answers with tables and charts.
+- **Analytics core** — natural-language questions, a hybrid deterministic/LLM-assisted router, a semantic layer covering 14 families of industrial questions (margin, stockouts, supplier delays, production, revenue, inventory, logistics, cost structure, returns, return reasons, customers, regions, average order value, anomalies), and business-readable answers with tables and charts.
 - **SQL governance** — an AST-based guardrail (sqlglot): single statement, pure `SELECT`, table **and column** allowlists enforced across the whole tree including subqueries, literal bounded `LIMIT`, `EXPLAIN` preflight and a query timeout — all backed by a dedicated read-only PostgreSQL role.
 - **Trilingual** — questions in French, German and English, and an interface (login page included) that switches between the three, with the choice persisted.
 - **Multi-user & security** — JWT authentication, optional OIDC SSO (Keycloak, authorization code + PKCE), multi-tenant data isolation, role-based access (admin/user), rate limiting.
@@ -102,7 +102,7 @@ SSO stays disabled until `FABRIQ_OIDC_ISSUER` and `FABRIQ_OIDC_CLIENT_ID` are se
 - The database is an industrial demo dataset, not a client database.
 - No PDF ingestion or document RAG, no fine-tuning.
 - Ollama remains optional and local; the default behaviour is fully deterministic and works without any LLM.
-- Questions are answered from a curated set of 13 intent families with verified SQL templates — FabriQ does not synthesise arbitrary SQL, so a question outside those families returns a clarification rather than a guess. That is a deliberate trade-off: bounded coverage in exchange for queries that cannot be wrong by construction.
+- Questions are answered from a curated set of 14 intent families with verified SQL templates — FabriQ does not synthesise arbitrary SQL, so a question outside those families returns a clarification rather than a guess. That is a deliberate trade-off: bounded coverage in exchange for queries that cannot be wrong by construction.
 - SSO claim mapping is static in the demo realm (`fabriq_tenant` / `fabriq_role` are hardcoded mappers); a real deployment would map them from user attributes or groups.
 - The SSO flow is covered end-to-end in CI against a committed OIDC stub, but the Keycloak container itself has not yet been exercised on the current development machine.
 - Users are declared via environment variables by default; OIDC SSO is additive and opt-in, not a replacement.

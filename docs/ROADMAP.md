@@ -4,7 +4,7 @@ FabriQ est un assistant d'analyse pour PME industrielles: une question en langag
 
 ## Etat actuel
 
-Version stabilisee: `FabriQ v0.16.0` (taguee le 31 juillet 2026).
+Version stabilisee: `FabriQ v0.17.0` (taguee le 8 aout 2026).
 
 | Jalon | Etat | Commentaire |
 | --- | --- | --- |
@@ -28,6 +28,7 @@ Version stabilisee: `FabriQ v0.16.0` (taguee le 31 juillet 2026).
 | Jalon 17 - V14 trilingue UI et SSO v0.14.0 | Termine | UI en allemand (FR/EN/DE), SSO OIDC optionnel (Keycloak, PKCE, JWKS), 125 tests. |
 | Jalon 18 - V15 login trilingue et langue persistee v0.15.0 | Termine | Page de login traduite FR/EN/DE, choix de langue persiste dans localStorage. |
 | Jalon 19 - V16 perimetre metier elargi v0.16.0 | Termine | E2E du parcours SSO en CI, 3 nouvelles familles (13 au total), allowlist de colonnes (L4), 130 tests. |
+| Jalon 20 - V17 structure de couts v0.17.0 | Termine | Famille "structure de couts" (14 au total), seed `costs` ventile en 5 postes, table `costs` au catalogue, evaluation 99 cas. |
 
 ## Objectif MVP
 
@@ -331,10 +332,25 @@ Version livree: `v0.16.0`.
 - Allowlist de colonnes (couche L4 du cahier des charges, seul ecart restant vs la specification) : validation par table avec resolution d'alias, +7 cas adversariaux, et un test rendant les 13 templates dans les deux dialectes pour detecter en CI toute colonne oubliee.
 - Correctif catalogue : `inventory_movements.quantity_delta` (colonne inexistante) -> `quantity`, verrouille par test.
 
+## Jalon 20 - V17 structure de couts v0.17.0
+
+Version livree: `v0.17.0`.
+
+- Nouvelle famille `cost_structure` (14e) : ventile les couts par poste
+  (matiere, main-d'oeuvre, logistique, qualite, frais generaux) et donne la part
+  de chacun sur une periode parametrable. Mots-cles FR/DE/EN distincts de la
+  famille `logistics_cost` (verifie par non-regression du routage).
+- Seed `costs` enrichi : d'un seul poste `production` a cinq postes ventiles par
+  produit et par mois, cote SQLite (`app/demo_data.py`) et PostgreSQL
+  (`db/init/02_seed.sql`) ; la qualite pese plus lourd sur les produits sujets
+  aux defauts et derive dans le temps.
+- Table `costs` ajoutee au catalogue semantique (`GET /api/catalog`).
+- Evaluation : golden 51, allemand 19, anglais 19, paraphrases 10 (99 cas). Le
+  garde-fou couvrait deja `costs` : le 14e template passe sans modification.
+
 ## Horizon suivant
 
-Prochaine version possible: `v0.17.0`.
+Prochaine version possible: `v0.18.0`.
 
 - Demo en ligne optionnelle.
 - Mapping SSO par attributs utilisateur / groupes Keycloak (les mappers de demo utilisent des claims fixes).
-- Famille "structure de couts" (necessite d'enrichir le seed `costs` : un seul `cost_type` aujourd'hui).

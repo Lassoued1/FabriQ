@@ -2,6 +2,26 @@
 
 Historique des versions de FabriQ. Le detail complet de chaque jalon est dans [docs/ROADMAP.md](docs/ROADMAP.md).
 
+## v0.17.0 — 8 aout 2026
+
+- **Nouvelle famille de questions : structure de couts (14 au total)**. Ventile
+  les couts mensuels par poste (matiere, main-d'oeuvre, logistique, qualite,
+  frais generaux) et donne la part de chacun dans le total, sur une periode
+  parametrable. Mots-cles FR/DE/EN choisis pour ne pas empieter sur la famille
+  "cout logistique" (routes/transporteurs), verifie par non-regression du
+  routage.
+- **Seed de couts enrichi** : la table `costs` n'exposait qu'un seul poste
+  (`production`) ; elle porte desormais cinq postes ventiles par produit et par
+  mois, cote SQLite (`app/demo_data.py`) comme PostgreSQL (`db/init/02_seed.sql`).
+  La qualite pese plus lourd sur les produits sujets aux defauts et derive dans
+  le temps, ce qui rend la structure de couts lisible a analyser.
+- **Table `costs` ajoutee au catalogue semantique** (`GET /api/catalog`), avec
+  ses colonnes documentees.
+- **Evaluation etendue** : +2 cas golden (51), +1 allemand (19), +1 anglais
+  (19) — 99 cas au total, 100% passants. Le garde-fou (allowlist tables et
+  colonnes) couvrait deja `costs`, donc le 14e template passe sans changement de
+  code du garde-fou.
+
 ## v0.16.0 — 31 juillet 2026
 
 - **Allowlist de colonnes (couche L4 du cahier des charges)** : le garde-fou ne
