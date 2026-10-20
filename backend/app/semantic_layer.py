@@ -569,7 +569,7 @@ INTENTS: tuple[IntentDefinition, ...] = (
                 SELECT
                   c.name AS client,
                   ROUND(SUM(o.revenue), 2) AS chiffre_affaires,
-                  ROUND(100.0 * SUM(o.revenue) / (SELECT SUM(revenue) FROM orders), 2) AS part_ca
+                  ROUND(100.0 * SUM(o.revenue) / NULLIF(SUM(SUM(o.revenue)) OVER (), 0), 2) AS part_ca
                 FROM orders o
                 JOIN customers c ON c.id = o.customer_id
                 GROUP BY c.id
@@ -580,7 +580,7 @@ INTENTS: tuple[IntentDefinition, ...] = (
                 SELECT
                   c.name AS client,
                   ROUND(SUM(o.revenue), 2) AS chiffre_affaires,
-                  ROUND(100.0 * SUM(o.revenue) / (SELECT SUM(revenue) FROM orders), 2) AS part_ca
+                  ROUND(100.0 * SUM(o.revenue) / NULLIF(SUM(SUM(o.revenue)) OVER (), 0), 2) AS part_ca
                 FROM orders o
                 JOIN customers c ON c.id = o.customer_id
                 GROUP BY c.id, c.name
@@ -658,7 +658,7 @@ INTENTS: tuple[IntentDefinition, ...] = (
                   COUNT(*) AS commandes,
                   ROUND(SUM(o.revenue), 2) AS chiffre_affaires,
                   ROUND(SUM(o.revenue - o.cost), 2) AS marge,
-                  ROUND(100.0 * SUM(o.revenue) / (SELECT SUM(revenue) FROM orders), 2) AS part_ca
+                  ROUND(100.0 * SUM(o.revenue) / NULLIF(SUM(SUM(o.revenue)) OVER (), 0), 2) AS part_ca
                 FROM orders o
                 JOIN customers c ON c.id = o.customer_id
                 WHERE o.order_date >= '{since_date}'
@@ -673,7 +673,7 @@ INTENTS: tuple[IntentDefinition, ...] = (
                   COUNT(*) AS commandes,
                   ROUND(SUM(o.revenue), 2) AS chiffre_affaires,
                   ROUND(SUM(o.revenue - o.cost), 2) AS marge,
-                  ROUND(100.0 * SUM(o.revenue) / (SELECT SUM(revenue) FROM orders), 2) AS part_ca
+                  ROUND(100.0 * SUM(o.revenue) / NULLIF(SUM(SUM(o.revenue)) OVER (), 0), 2) AS part_ca
                 FROM orders o
                 JOIN customers c ON c.id = o.customer_id
                 WHERE o.order_date >= DATE '{since_date}'

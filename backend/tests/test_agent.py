@@ -787,5 +787,87 @@ class V10Test(unittest.TestCase):
         )
 
 
+class AlertAndTenantFixTests(unittest.TestCase):
+    """Regression guards for the audit fixes: alert creation, alert threshold
+    columns, and tenant-scoped share denominators."""
+
+    # Doit refleter EXACTEMENT le mapping du frontend (AlertsPanel.tsx INTENT_OPTIONS).
+    ALERT_COLUMNS = {
+        "supplier_delays": "retard_moyen_jours",
+        "stockout_risk": "jours_couverture",
+        "margin_trend": "taux_marge",
+        "returns_rate": "quantite_retournee",
+        "anomaly_detection": "ecart",
+    }
+
+    def test_create_alert_without_client_tenant_id_succeeds(self) -> None:
+        """Le client n'envoie jamais tenant_id ; le serveur l'injecte (plus de 422)."""
+        from fastapi.testclient import TestClient
+        from app.main import app
+
+        app.dependency_overrides[get_current_user] = _test_user
+        try:
+            with patch("app.main.add_rule", side_effect=lambda rule: rule):
+                response = TestClient(app).post(
+                    "/api/alerts",
+                    json={
+                        "name": "retards fournisseurs",
+                        "intent_id": "supplier_delays",
+                        "threshold_column": "retard_moyen_jours",
+                        "threshold_value": 3,
+                        "operator": "gt",
+                    },
+                )
+        finally:
+            app.dependency_overrides.pop(get_current_user, None)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["rule"]["tenant_id"], "tenant_test")
+
+    def test_alert_threshold_columns_exist_in_sql_output(self) -> None:
+        """Chaque colonne-seuil proposee doit exister dans la sortie du template,
+        sinon l'evaluateur ne declenche jamais (le bug corrige)."""
+        from app.database import SQLiteDatabase
+        from app.semantic_layer import QueryParameters, intent_by_id, render_intent_sql
+
+        db = SQLiteDatabase()
+        for intent_id, column in self.ALERT_COLUMNS.items():
+            with self.subTest(intent=intent_id):
+                intent = intent_by_id(intent_id)
+                self.assertIsNotNone(intent)
+                sql, _ = render_intent_sql(intent, "sqlite", QueryParameters())
+                rows = db.execute_readonly(sql)
+                self.assertTrue(rows, f"{intent_id}: aucune ligne produite")
+                self.assertIn(
+                    column, rows[0],
+                    f"{intent_id}: la colonne d'alerte '{column}' est absente de la sortie",
+                )
+
+    def test_share_denominator_not_a_global_unfiltered_subquery(self) -> None:
+        """part_ca ne doit plus diviser par un total global non filtre par tenant."""
+        from app.semantic_layer import QueryParameters, intent_by_id, render_intent_sql
+
+        for intent_id in ("customer_concentration", "regional_performance"):
+            for dialect in ("sqlite", "postgres"):
+                with self.subTest(intent=intent_id, dialect=dialect):
+                    sql, _ = render_intent_sql(intent_by_id(intent_id), dialect, QueryParameters())
+                    self.assertNotIn(
+                        "(SELECT SUM(revenue) FROM orders)", sql,
+                        "denominateur global non filtre encore present",
+                    )
+                    self.assertIn("OVER ()", sql, "fenetre de total attendue")
+
+    def test_share_sums_to_about_100_on_full_set(self) -> None:
+        """Sur SQLite (sans filtre tenant), la somme des parts fait ~100%."""
+        from app.database import SQLiteDatabase
+        from app.semantic_layer import QueryParameters, intent_by_id, render_intent_sql
+
+        db = SQLiteDatabase()
+        sql, _ = render_intent_sql(intent_by_id("customer_concentration"), "sqlite", QueryParameters())
+        rows = db.execute_readonly(sql)
+        total_share = sum(r["part_ca"] for r in rows)
+        self.assertAlmostEqual(total_share, 100.0, delta=0.5)
+
+
 if __name__ == "__main__":
     unittest.main()

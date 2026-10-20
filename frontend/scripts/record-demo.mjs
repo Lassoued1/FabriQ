@@ -1,9 +1,10 @@
 // Enregistre le scenario de demo FabriQ en frames PNG pour docs/assets.
 //
-// Scenario v0.15.0 : page de login trilingue (FR -> EN -> DE), connexion en
+// Scenario v0.17.0 : page de login trilingue (FR -> EN -> DE), connexion en
 // allemand, la langue choisie se propage a l'application, question en
 // allemand, retour en francais via le selecteur de l'app, question en
-// francais avec parcours du resultat (graphique, tableau, SQL).
+// francais avec parcours du resultat (graphique, tableau, SQL), puis mise en
+// avant de la nouvelle famille "structure de couts" (ventilation par poste).
 //
 // Prerequis :
 //   - backend sur http://127.0.0.1:8000 (utilisateur admin@fabriq.io / fabriq2024)
@@ -125,6 +126,20 @@ await snap(1400)
 await page.locator('.sql-block').scrollIntoViewIfNeeded()
 await page.waitForTimeout(300)
 await snap(2000)
+
+// 9. Nouveaute v0.17.0 : la famille "structure de couts" ventile les couts
+// par poste (matiere, main-d'oeuvre, logistique, qualite, frais generaux).
+await page.evaluate(() => window.scrollTo(0, 0))
+await page.waitForTimeout(300)
+previousSql = await page.locator('.sql-block pre').textContent()
+await typeProgressively('Quelle est la structure de couts par poste ?')
+await analyzeButton.click()
+await waitForNewSql(previousSql)
+await page.waitForTimeout(700)
+await snap(1800)
+await page.locator('.chart-block').scrollIntoViewIfNeeded()
+await page.waitForTimeout(400)
+await snap(2100)
 
 writeFileSync(join(framesDir, 'manifest.json'), JSON.stringify(manifest, null, 2))
 await browser.close()

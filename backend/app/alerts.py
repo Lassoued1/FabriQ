@@ -44,6 +44,25 @@ class AlertRule(BaseModel):
     slack_webhook_url: str | None = None
 
 
+class AlertRuleCreate(BaseModel):
+    """Payload de creation : le client ne fournit jamais tenant_id.
+
+    Le tenant est injecte cote serveur depuis le JWT authentifie, ce qui evite
+    un 422 de validation et garantit qu'un client ne peut pas se declarer d'un
+    autre tenant.
+    """
+    name: str
+    intent_id: str
+    threshold_column: str
+    threshold_value: float
+    operator: Literal["gt", "lt", "gte", "lte"]
+    cron: str = "0 8 * * *"
+    enabled: bool = True
+    webhook_url: str | None = None
+    email_to: list[str] | None = None
+    slack_webhook_url: str | None = None
+
+
 class AlertEvent(BaseModel):
     rule_id: str
     rule_name: str

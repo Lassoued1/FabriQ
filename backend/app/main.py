@@ -16,6 +16,7 @@ from .agent import answer_question
 from .cache import sql_result_cache
 from .alerts import (
     AlertRule,
+    AlertRuleCreate,
     add_rule,
     delete_rule,
     export_alert_events_csv,
@@ -355,9 +356,8 @@ def list_alerts(current_user: CurrentUser) -> dict[str, list]:
 
 
 @app.post("/api/alerts", tags=["alerts"], summary="Créer une règle d'alerte planifiée")
-def create_alert(payload: AlertRule, current_user: CurrentUser) -> dict[str, object]:
-    payload.tenant_id = current_user.tenant_id
-    rule = add_rule(payload)
+def create_alert(payload: AlertRuleCreate, current_user: CurrentUser) -> dict[str, object]:
+    rule = add_rule(AlertRule(**payload.model_dump(), tenant_id=current_user.tenant_id))
     return {"rule": rule.model_dump()}
 
 

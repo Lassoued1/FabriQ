@@ -31,7 +31,7 @@ export function AlertsPanel({
   const [showForm, setShowForm] = useState(false)
   const [formName, setFormName] = useState('')
   const [formIntentId, setFormIntentId] = useState('supplier_delays')
-  const [formColumn, setFormColumn] = useState('avg_delay_days')
+  const [formColumn, setFormColumn] = useState('retard_moyen_jours')
   const [formValue, setFormValue] = useState('3')
   const [formOp, setFormOp] = useState<AlertRule['operator']>('gt')
   const [formCron, setFormCron] = useState('0 8 * * *')
@@ -41,11 +41,14 @@ export function AlertsPanel({
   const { t } = useLang()
 
   const INTENT_OPTIONS = [
-    { id: 'supplier_delays', label: t.alerts.intents.supplier_delays, column: 'avg_delay_days' },
-    { id: 'stockout_risk', label: t.alerts.intents.stockout_risk, column: 'days_of_coverage' },
-    { id: 'margin_trend', label: t.alerts.intents.margin_trend, column: 'margin' },
-    { id: 'returns_rate', label: t.alerts.intents.returns_rate, column: 'return_rate_pct' },
-    { id: 'anomaly_detection', label: t.alerts.intents.anomaly_detection, column: 'variance_from_avg' },
+    // Les colonnes doivent correspondre EXACTEMENT aux alias de sortie des
+    // templates SQL (voir backend/app/semantic_layer.py), sinon l'evaluateur
+    // ne trouve aucune valeur et l'alerte ne se declenche jamais.
+    { id: 'supplier_delays', label: t.alerts.intents.supplier_delays, column: 'retard_moyen_jours' },
+    { id: 'stockout_risk', label: t.alerts.intents.stockout_risk, column: 'jours_couverture' },
+    { id: 'margin_trend', label: t.alerts.intents.margin_trend, column: 'taux_marge' },
+    { id: 'returns_rate', label: t.alerts.intents.returns_rate, column: 'quantite_retournee' },
+    { id: 'anomaly_detection', label: t.alerts.intents.anomaly_detection, column: 'ecart' },
   ]
 
   function handleCreate(e: FormEvent) {
