@@ -127,6 +127,31 @@ def _evaluate_case(connection: Any, case: dict[str, Any]) -> dict[str, Any]:
     if chart_type != case["expected_chart_type"]:
         failures.append(f"chart_type={chart_type!r}, expected={case['expected_chart_type']!r}")
 
+    # Verification des valeurs numeriques : compare le contenu reel de lignes
+    # attendues (pas seulement colonnes/nombre de lignes). C'est ce qui attrape
+    # un calcul metier faux qu'un simple controle de structure laisserait passer.
+    expected_rows = list(case.get("expected_rows", []))
+    if case.get("expected_first_row"):
+        expected_rows.insert(0, case["expected_first_row"])
+    for i, expected in enumerate(expected_rows):
+        if i >= len(response.rows):
+            failures.append(f"expected row[{i}] missing (only {len(response.rows)} rows)")
+            continue
+        row = response.rows[i]
+        for col, want in expected.items():
+            got = row.get(col)
+            if isinstance(want, (int, float)) and not isinstance(want, bool):
+                try:
+                    got_f = float(got)
+                except (TypeError, ValueError):
+                    failures.append(f"row[{i}].{col}={got!r} not numeric, expected~={want}")
+                    continue
+                tolerance = max(0.1, abs(want) * 0.02)
+                if abs(got_f - want) > tolerance:
+                    failures.append(f"row[{i}].{col}={got_f}, expected~={want}")
+            elif got != want:
+                failures.append(f"row[{i}].{col}={got!r}, expected={want!r}")
+
     return {
         "id": case["id"],
         "question": case["question"],

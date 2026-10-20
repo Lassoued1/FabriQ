@@ -46,8 +46,8 @@ export function AlertsPanel({
     // ne trouve aucune valeur et l'alerte ne se declenche jamais.
     { id: 'supplier_delays', label: t.alerts.intents.supplier_delays, column: 'retard_moyen_jours' },
     { id: 'stockout_risk', label: t.alerts.intents.stockout_risk, column: 'jours_couverture' },
-    { id: 'margin_trend', label: t.alerts.intents.margin_trend, column: 'taux_marge' },
-    { id: 'returns_rate', label: t.alerts.intents.returns_rate, column: 'quantite_retournee' },
+    { id: 'margin_trend', label: t.alerts.intents.margin_trend, column: 'variation_pts' },
+    { id: 'returns_rate', label: t.alerts.intents.returns_rate, column: 'taux_retour_pct' },
     { id: 'anomaly_detection', label: t.alerts.intents.anomaly_detection, column: 'ecart' },
   ]
 

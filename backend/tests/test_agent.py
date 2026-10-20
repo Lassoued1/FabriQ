@@ -795,8 +795,8 @@ class AlertAndTenantFixTests(unittest.TestCase):
     ALERT_COLUMNS = {
         "supplier_delays": "retard_moyen_jours",
         "stockout_risk": "jours_couverture",
-        "margin_trend": "taux_marge",
-        "returns_rate": "quantite_retournee",
+        "margin_trend": "variation_pts",
+        "returns_rate": "taux_retour_pct",
         "anomaly_detection": "ecart",
     }
 

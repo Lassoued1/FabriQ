@@ -194,33 +194,43 @@ INTENTS: tuple[IntentDefinition, ...] = (
         sql={
             "sqlite": """
                 SELECT
-                  strftime('%Y-%m', o.order_date) AS mois,
                   p.reference AS produit,
-                  ROUND(SUM(o.revenue - o.cost), 2) AS marge,
-                  ROUND(100.0 * SUM(o.revenue - o.cost) / NULLIF(SUM(o.revenue), 0), 2) AS taux_marge
+                  ROUND(100.0 * SUM(CASE WHEN o.order_date >= '{mid_date}' THEN o.revenue - o.cost END)
+                        / NULLIF(SUM(CASE WHEN o.order_date >= '{mid_date}' THEN o.revenue END), 0), 2) AS taux_marge_recent,
+                  ROUND(100.0 * SUM(CASE WHEN o.order_date < '{mid_date}' THEN o.revenue - o.cost END)
+                        / NULLIF(SUM(CASE WHEN o.order_date < '{mid_date}' THEN o.revenue END), 0), 2) AS taux_marge_precedent,
+                  ROUND(100.0 * SUM(CASE WHEN o.order_date >= '{mid_date}' THEN o.revenue - o.cost END)
+                          / NULLIF(SUM(CASE WHEN o.order_date >= '{mid_date}' THEN o.revenue END), 0)
+                        - 100.0 * SUM(CASE WHEN o.order_date < '{mid_date}' THEN o.revenue - o.cost END)
+                          / NULLIF(SUM(CASE WHEN o.order_date < '{mid_date}' THEN o.revenue END), 0), 2) AS variation_pts
                 FROM orders o
                 JOIN products p ON p.id = o.product_id
                 WHERE o.order_date >= '{since_date}'
-                GROUP BY mois, p.reference
-                ORDER BY mois ASC, taux_marge ASC
+                GROUP BY p.id
+                ORDER BY variation_pts ASC
                 LIMIT {top_n}
             """,
             "postgres": """
                 SELECT
-                  TO_CHAR(o.order_date, 'YYYY-MM') AS mois,
                   p.reference AS produit,
-                  ROUND(SUM(o.revenue - o.cost), 2) AS marge,
-                  ROUND(100.0 * SUM(o.revenue - o.cost) / NULLIF(SUM(o.revenue), 0), 2) AS taux_marge
+                  ROUND(100.0 * SUM(CASE WHEN o.order_date >= DATE '{mid_date}' THEN o.revenue - o.cost END)
+                        / NULLIF(SUM(CASE WHEN o.order_date >= DATE '{mid_date}' THEN o.revenue END), 0), 2) AS taux_marge_recent,
+                  ROUND(100.0 * SUM(CASE WHEN o.order_date < DATE '{mid_date}' THEN o.revenue - o.cost END)
+                        / NULLIF(SUM(CASE WHEN o.order_date < DATE '{mid_date}' THEN o.revenue END), 0), 2) AS taux_marge_precedent,
+                  ROUND(100.0 * SUM(CASE WHEN o.order_date >= DATE '{mid_date}' THEN o.revenue - o.cost END)
+                          / NULLIF(SUM(CASE WHEN o.order_date >= DATE '{mid_date}' THEN o.revenue END), 0)
+                        - 100.0 * SUM(CASE WHEN o.order_date < DATE '{mid_date}' THEN o.revenue - o.cost END)
+                          / NULLIF(SUM(CASE WHEN o.order_date < DATE '{mid_date}' THEN o.revenue END), 0), 2) AS variation_pts
                 FROM orders o
                 JOIN products p ON p.id = o.product_id
                 WHERE o.order_date >= DATE '{since_date}'
-                GROUP BY TO_CHAR(o.order_date, 'YYYY-MM'), p.reference
-                ORDER BY mois ASC, taux_marge ASC
+                GROUP BY p.id, p.reference
+                ORDER BY variation_pts ASC
                 LIMIT {top_n}
             """,
         },
-        chart=ChartSpec(type="line", x="mois", y="taux_marge", title="Evolution du taux de marge"),
-        explanation="La requete agrege revenus et couts par mois et produit sur le dernier trimestre disponible.",
+        chart=ChartSpec(type="bar", x="produit", y="variation_pts", title="Variation du taux de marge"),
+        explanation="La requete compare le taux de marge recent a la periode anterieure par produit et classe les plus fortes baisses en tete (variation negative).",
     ),
     IntentDefinition(
         id="stockout_risk",
@@ -472,31 +482,33 @@ INTENTS: tuple[IntentDefinition, ...] = (
                 SELECT
                   route,
                   carrier AS transporteur,
-                  ROUND(AVG(cost), 2) AS cout_moyen,
-                  ROUND(SUM(cost), 2) AS cout_total,
-                  ROUND(AVG(delay_days), 1) AS retard_moyen_jours
+                  ROUND(AVG(CASE WHEN shipped_at >= '{mid_date}' THEN cost END), 2) AS cout_recent,
+                  ROUND(AVG(CASE WHEN shipped_at < '{mid_date}' THEN cost END), 2) AS cout_precedent,
+                  ROUND(AVG(CASE WHEN shipped_at >= '{mid_date}' THEN cost END)
+                        - AVG(CASE WHEN shipped_at < '{mid_date}' THEN cost END), 2) AS hausse
                 FROM shipments
                 WHERE shipped_at >= '{since_date}'
                 GROUP BY route, carrier
-                ORDER BY cout_moyen DESC
+                ORDER BY hausse DESC
                 LIMIT {top_n}
             """,
             "postgres": """
                 SELECT
                   route,
                   carrier AS transporteur,
-                  ROUND(AVG(cost), 2) AS cout_moyen,
-                  ROUND(SUM(cost), 2) AS cout_total,
-                  ROUND(AVG(delay_days), 1) AS retard_moyen_jours
+                  ROUND(AVG(CASE WHEN shipped_at >= DATE '{mid_date}' THEN cost END), 2) AS cout_recent,
+                  ROUND(AVG(CASE WHEN shipped_at < DATE '{mid_date}' THEN cost END), 2) AS cout_precedent,
+                  ROUND(AVG(CASE WHEN shipped_at >= DATE '{mid_date}' THEN cost END)
+                        - AVG(CASE WHEN shipped_at < DATE '{mid_date}' THEN cost END), 2) AS hausse
                 FROM shipments
                 WHERE shipped_at >= DATE '{since_date}'
                 GROUP BY route, carrier
-                ORDER BY cout_moyen DESC
+                ORDER BY hausse DESC
                 LIMIT {top_n}
             """,
         },
-        chart=ChartSpec(type="bar", x="route", y="cout_moyen", title="Cout moyen par route"),
-        explanation="La requete compare le cout moyen de transport par route et transporteur.",
+        chart=ChartSpec(type="bar", x="route", y="hausse", title="Hausse du cout par route"),
+        explanation="La requete compare le cout moyen recent a la periode anterieure par route pour identifier celles devenues plus cheres.",
     ),
     IntentDefinition(
         id="returns_rate",
@@ -522,13 +534,16 @@ INTENTS: tuple[IntentDefinition, ...] = (
                   p.reference AS produit,
                   p.category AS categorie,
                   SUM(r.quantity) AS quantite_retournee,
-                  COUNT(*) AS retours,
-                  GROUP_CONCAT(DISTINCT r.reason) AS motifs
+                  (SELECT SUM(o.quantity) FROM orders o
+                     WHERE o.product_id = p.id AND o.order_date >= '{since_date}') AS quantite_vendue,
+                  ROUND(100.0 * SUM(r.quantity)
+                        / NULLIF((SELECT SUM(o.quantity) FROM orders o
+                                    WHERE o.product_id = p.id AND o.order_date >= '{since_date}'), 0), 2) AS taux_retour_pct
                 FROM returns r
                 JOIN products p ON p.id = r.product_id
                 WHERE r.returned_at >= '{since_date}'
                 GROUP BY p.id
-                ORDER BY quantite_retournee DESC
+                ORDER BY taux_retour_pct DESC
                 LIMIT {top_n}
             """,
             "postgres": """
@@ -536,18 +551,21 @@ INTENTS: tuple[IntentDefinition, ...] = (
                   p.reference AS produit,
                   p.category AS categorie,
                   SUM(r.quantity) AS quantite_retournee,
-                  COUNT(*) AS retours,
-                  STRING_AGG(DISTINCT r.reason, ', ') AS motifs
+                  (SELECT SUM(o.quantity) FROM orders o
+                     WHERE o.product_id = p.id AND o.order_date >= DATE '{since_date}') AS quantite_vendue,
+                  ROUND(100.0 * SUM(r.quantity)
+                        / NULLIF((SELECT SUM(o.quantity) FROM orders o
+                                    WHERE o.product_id = p.id AND o.order_date >= DATE '{since_date}'), 0), 2) AS taux_retour_pct
                 FROM returns r
                 JOIN products p ON p.id = r.product_id
                 WHERE r.returned_at >= DATE '{since_date}'
                 GROUP BY p.id, p.reference, p.category
-                ORDER BY quantite_retournee DESC
+                ORDER BY taux_retour_pct DESC
                 LIMIT {top_n}
             """,
         },
-        chart=ChartSpec(type="bar", x="produit", y="quantite_retournee", title="Retours par produit"),
-        explanation="La requete regroupe les retours par produit avec quantite et motifs observes.",
+        chart=ChartSpec(type="bar", x="produit", y="taux_retour_pct", title="Taux de retour par produit"),
+        explanation="La requete rapporte les quantites retournees aux quantites vendues sur la periode pour obtenir un vrai taux de retour par produit.",
     ),
     IntentDefinition(
         id="customer_concentration",
@@ -611,29 +629,33 @@ INTENTS: tuple[IntentDefinition, ...] = (
                 SELECT
                   p.reference AS produit,
                   ROUND(SUM(CASE WHEN strftime('%Y-%m', o.order_date) = '2026-06' THEN o.revenue ELSE 0 END), 2) AS ca_dernier_mois,
-                  ROUND(AVG(o.revenue), 2) AS ca_moyen_commande,
-                  ROUND(SUM(CASE WHEN strftime('%Y-%m', o.order_date) = '2026-06' THEN o.revenue ELSE 0 END) - AVG(o.revenue), 2) AS ecart
+                  ROUND(SUM(o.revenue) / COUNT(DISTINCT strftime('%Y-%m', o.order_date)), 2) AS ca_moyen_mensuel,
+                  ROUND(SUM(CASE WHEN strftime('%Y-%m', o.order_date) = '2026-06' THEN o.revenue ELSE 0 END)
+                        - SUM(o.revenue) / COUNT(DISTINCT strftime('%Y-%m', o.order_date)), 2) AS ecart
                 FROM orders o
                 JOIN products p ON p.id = o.product_id
                 GROUP BY p.id
-                ORDER BY ABS(ecart) DESC
+                ORDER BY ABS(SUM(CASE WHEN strftime('%Y-%m', o.order_date) = '2026-06' THEN o.revenue ELSE 0 END)
+                             - SUM(o.revenue) / COUNT(DISTINCT strftime('%Y-%m', o.order_date))) DESC
                 LIMIT {top_n}
             """,
             "postgres": """
                 SELECT
                   p.reference AS produit,
                   ROUND(SUM(CASE WHEN TO_CHAR(o.order_date, 'YYYY-MM') = '2026-06' THEN o.revenue ELSE 0 END), 2) AS ca_dernier_mois,
-                  ROUND(AVG(o.revenue), 2) AS ca_moyen_commande,
-                  ROUND(SUM(CASE WHEN TO_CHAR(o.order_date, 'YYYY-MM') = '2026-06' THEN o.revenue ELSE 0 END) - AVG(o.revenue), 2) AS ecart
+                  ROUND(SUM(o.revenue) / COUNT(DISTINCT TO_CHAR(o.order_date, 'YYYY-MM')), 2) AS ca_moyen_mensuel,
+                  ROUND(SUM(CASE WHEN TO_CHAR(o.order_date, 'YYYY-MM') = '2026-06' THEN o.revenue ELSE 0 END)
+                        - SUM(o.revenue) / COUNT(DISTINCT TO_CHAR(o.order_date, 'YYYY-MM')), 2) AS ecart
                 FROM orders o
                 JOIN products p ON p.id = o.product_id
                 GROUP BY p.id, p.reference
-                ORDER BY ABS(ROUND(SUM(CASE WHEN TO_CHAR(o.order_date, 'YYYY-MM') = '2026-06' THEN o.revenue ELSE 0 END) - AVG(o.revenue), 2)) DESC
+                ORDER BY ABS(SUM(CASE WHEN TO_CHAR(o.order_date, 'YYYY-MM') = '2026-06' THEN o.revenue ELSE 0 END)
+                             - SUM(o.revenue) / COUNT(DISTINCT TO_CHAR(o.order_date, 'YYYY-MM'))) DESC
                 LIMIT {top_n}
             """,
         },
         chart=ChartSpec(type="bar", x="produit", y="ecart", title="Ecarts du dernier mois"),
-        explanation="La requete remonte les plus grands ecarts entre le dernier mois disponible et la moyenne observee.",
+        explanation="La requete compare le chiffre d'affaires du dernier mois au chiffre d'affaires mensuel moyen du produit (meme unite) et remonte les plus grands ecarts.",
     ),
     IntentDefinition(
         id="regional_performance",
@@ -910,13 +932,16 @@ WINDOW_MONTHS_BOUNDS = (1, 24)
 # Parametres supportes par intention ; les defauts reproduisent exactement
 # les valeurs historiques des templates.
 PARAM_SPECS: dict[str, dict[str, object]] = {
-    "margin_trend": {"top_n": 50, "since_date": "2026-04-01"},
+    # mid_date : date de coupure (milieu de la fenetre) pour les intentions qui
+    # comparent une periode recente a une periode anterieure. Recalculee a partir
+    # de la fenetre effective dans render_intent_sql (jamais fournie par le client).
+    "margin_trend": {"top_n": 50, "since_date": "2026-01-01", "mid_date": "2026-04-01"},
     "stockout_risk": {"top_n": 50, "horizon_days": 30, "since_date": "2026-04-01"},
     "supplier_delays": {"top_n": 50, "since_date": "2026-01-01"},
     "production_efficiency": {"top_n": 50, "since_date": "2026-01-01"},
     "revenue_trend": {"top_n": 80, "since_date": "2026-01-01"},
     "stock_ageing": {"top_n": 50},
-    "logistics_cost": {"top_n": 50, "since_date": "2026-01-01"},
+    "logistics_cost": {"top_n": 50, "since_date": "2026-01-01", "mid_date": "2026-04-01"},
     "returns_rate": {"top_n": 50, "since_date": "2026-03-01"},
     "customer_concentration": {"top_n": 50},
     "anomaly_detection": {"top_n": 50},
@@ -1008,6 +1033,13 @@ def render_intent_sql(
         values["since_date"] = since
         applied.append(f"fenetre {params.window_months} mois (depuis {since})")
 
+    # Date de coupure recalculee dynamiquement : milieu entre le debut effectif
+    # de la fenetre et l'ancre des donnees. Garantit deux demi-periodes
+    # comparables quelle que soit la fenetre demandee.
+    if "mid_date" in spec:
+        effective_since = date.fromisoformat(str(values["since_date"]))
+        values["mid_date"] = _midpoint(effective_since, DEMO_DATA_ANCHOR).isoformat()
+
     return intent.sql_for(dialect).format_map(values), applied
 
 
@@ -1017,6 +1049,10 @@ def _months_before(anchor: date, months: int) -> date:
     month += 1
     day = min(anchor.day, calendar.monthrange(year, month)[1])
     return date(year, month, day)
+
+
+def _midpoint(start: date, end: date) -> date:
+    return start + (end - start) / 2
 
 
 def _first_int(match: re.Match[str] | None) -> int | None:

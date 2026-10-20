@@ -3,8 +3,11 @@
     "id": "de_margin_trend",
     "question": "Bei welchen Produkten ist die Marge im letzten Quartal gesunken?",
     "expected_intent": "margin_trend",
-    "expected_chart_type": "line",
-    "required_columns": ["mois", "produit", "marge", "taux_marge"],
+    "expected_chart_type": "bar",
+    "required_columns": [
+      "produit",
+      "variation_pts"
+    ],
     "min_rows": 1
   },
   {
@@ -12,7 +15,13 @@
     "question": "Welche Artikel haben in den nächsten 30 Tagen einen Engpass?",
     "expected_intent": "stockout_risk",
     "expected_chart_type": "bar",
-    "required_columns": ["produit", "categorie", "stock_actuel", "stock_securite", "jours_couverture"],
+    "required_columns": [
+      "produit",
+      "categorie",
+      "stock_actuel",
+      "stock_securite",
+      "jours_couverture"
+    ],
     "min_rows": 1,
     "expected_sql_contains": "< 30"
   },
@@ -21,7 +30,12 @@
     "question": "Welche Lieferanten waren am häufigsten verspätet?",
     "expected_intent": "supplier_delays",
     "expected_chart_type": "bar",
-    "required_columns": ["fournisseur", "livraisons", "retard_moyen_jours", "livraisons_en_retard"],
+    "required_columns": [
+      "fournisseur",
+      "livraisons",
+      "retard_moyen_jours",
+      "livraisons_en_retard"
+    ],
     "min_rows": 1
   },
   {
@@ -29,7 +43,12 @@
     "question": "Welche Produktionslinien hatten die meisten Fehler?",
     "expected_intent": "production_efficiency",
     "expected_chart_type": "bar",
-    "required_columns": ["ligne", "volume_produit", "defauts", "taux_defaut"],
+    "required_columns": [
+      "ligne",
+      "volume_produit",
+      "defauts",
+      "taux_defaut"
+    ],
     "min_rows": 1
   },
   {
@@ -37,7 +56,11 @@
     "question": "Zeige den monatlichen Umsatz pro Kategorie.",
     "expected_intent": "revenue_trend",
     "expected_chart_type": "line",
-    "required_columns": ["mois", "categorie", "chiffre_affaires"],
+    "required_columns": [
+      "mois",
+      "categorie",
+      "chiffre_affaires"
+    ],
     "min_rows": 1
   },
   {
@@ -45,7 +68,13 @@
     "question": "Welche Produkte liegen zu lange im Lager?",
     "expected_intent": "stock_ageing",
     "expected_chart_type": "bar",
-    "required_columns": ["produit", "categorie", "stock_actuel", "dernier_mouvement", "jours_sans_mouvement"],
+    "required_columns": [
+      "produit",
+      "categorie",
+      "stock_actuel",
+      "dernier_mouvement",
+      "jours_sans_mouvement"
+    ],
     "min_rows": 1
   },
   {
@@ -53,7 +82,10 @@
     "question": "Welche Routen sind teurer geworden?",
     "expected_intent": "logistics_cost",
     "expected_chart_type": "bar",
-    "required_columns": ["route", "transporteur", "cout_moyen", "cout_total", "retard_moyen_jours"],
+    "required_columns": [
+      "route",
+      "hausse"
+    ],
     "min_rows": 1
   },
   {
@@ -61,7 +93,10 @@
     "question": "Welche Produkte haben die höchste Retourenquote?",
     "expected_intent": "returns_rate",
     "expected_chart_type": "bar",
-    "required_columns": ["produit", "categorie", "quantite_retournee", "retours", "motifs"],
+    "required_columns": [
+      "produit",
+      "taux_retour_pct"
+    ],
     "min_rows": 1
   },
   {
@@ -69,7 +104,11 @@
     "question": "Welche Kunden machen den größten Teil des Umsatzes aus?",
     "expected_intent": "customer_concentration",
     "expected_chart_type": "bar",
-    "required_columns": ["client", "chiffre_affaires", "part_ca"],
+    "required_columns": [
+      "client",
+      "chiffre_affaires",
+      "part_ca"
+    ],
     "min_rows": 1
   },
   {
@@ -77,7 +116,11 @@
     "question": "Was hat sich im letzten Monat ungewöhnlich verändert?",
     "expected_intent": "anomaly_detection",
     "expected_chart_type": "bar",
-    "required_columns": ["produit", "ca_dernier_mois", "ca_moyen_commande", "ecart"],
+    "required_columns": [
+      "produit",
+      "ca_dernier_mois",
+      "ecart"
+    ],
     "min_rows": 1
   },
   {
@@ -85,7 +128,11 @@
     "question": "Top 3 der größten Kunden nach Umsatzanteil",
     "expected_intent": "customer_concentration",
     "expected_chart_type": "bar",
-    "required_columns": ["client", "chiffre_affaires", "part_ca"],
+    "required_columns": [
+      "client",
+      "chiffre_affaires",
+      "part_ca"
+    ],
     "min_rows": 1,
     "max_rows": 3,
     "expected_sql_contains": "LIMIT 3"
@@ -95,7 +142,11 @@
     "question": "Wie hat sich der Umsatz pro Kategorie im letzten Quartal entwickelt?",
     "expected_intent": "revenue_trend",
     "expected_chart_type": "line",
-    "required_columns": ["mois", "categorie", "chiffre_affaires"],
+    "required_columns": [
+      "mois",
+      "categorie",
+      "chiffre_affaires"
+    ],
     "min_rows": 1,
     "expected_sql_contains": "'2026-03-30'"
   },
@@ -151,7 +202,10 @@
     "question": "Wie ist die Kostenstruktur nach Kostenart?",
     "expected_intent": "cost_structure",
     "expected_chart_type": "bar",
-    "required_columns": ["type_cout", "montant"],
+    "required_columns": [
+      "type_cout",
+      "montant"
+    ],
     "min_rows": 1,
     "max_rows": 5
   },

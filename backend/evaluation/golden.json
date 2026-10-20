@@ -3,14 +3,16 @@
     "id": "margin_trend",
     "question": "Quels produits ont vu leur marge baisser le trimestre dernier ?",
     "expected_intent": "margin_trend",
-    "expected_chart_type": "line",
+    "expected_chart_type": "bar",
     "required_columns": [
-      "mois",
       "produit",
-      "marge",
-      "taux_marge"
+      "variation_pts"
     ],
-    "min_rows": 1
+    "min_rows": 1,
+    "expected_first_row": {
+      "produit": "FX-700",
+      "variation_pts": -3.29
+    }
   },
   {
     "id": "stockout_risk",
@@ -85,12 +87,13 @@
     "expected_chart_type": "bar",
     "required_columns": [
       "route",
-      "transporteur",
-      "cout_moyen",
-      "cout_total",
-      "retard_moyen_jours"
+      "hausse"
     ],
-    "min_rows": 1
+    "min_rows": 1,
+    "expected_first_row": {
+      "route": "Marseille -> Paris",
+      "hausse": 510.0
+    }
   },
   {
     "id": "returns_rate",
@@ -99,12 +102,13 @@
     "expected_chart_type": "bar",
     "required_columns": [
       "produit",
-      "categorie",
-      "quantite_retournee",
-      "retours",
-      "motifs"
+      "taux_retour_pct"
     ],
-    "min_rows": 1
+    "min_rows": 1,
+    "expected_first_row": {
+      "produit": "EX-510",
+      "taux_retour_pct": 21.15
+    }
   },
   {
     "id": "customer_concentration",
@@ -126,21 +130,22 @@
     "required_columns": [
       "produit",
       "ca_dernier_mois",
-      "ca_moyen_commande",
       "ecart"
     ],
-    "min_rows": 1
+    "min_rows": 1,
+    "expected_first_row": {
+      "produit": "EX-510",
+      "ecart": 5760.0
+    }
   },
   {
     "id": "margin_trend_v2",
     "question": "La rentabilite de nos produits se degrade-t-elle ce trimestre ?",
     "expected_intent": "margin_trend",
-    "expected_chart_type": "line",
+    "expected_chart_type": "bar",
     "required_columns": [
-      "mois",
       "produit",
-      "marge",
-      "taux_marge"
+      "variation_pts"
     ],
     "min_rows": 1
   },
@@ -148,12 +153,10 @@
     "id": "margin_trend_v3",
     "question": "Sur quels articles la marge est en baisse recemment ?",
     "expected_intent": "margin_trend",
-    "expected_chart_type": "line",
+    "expected_chart_type": "bar",
     "required_columns": [
-      "mois",
       "produit",
-      "marge",
-      "taux_marge"
+      "variation_pts"
     ],
     "min_rows": 1
   },
@@ -296,10 +299,7 @@
     "expected_chart_type": "bar",
     "required_columns": [
       "route",
-      "transporteur",
-      "cout_moyen",
-      "cout_total",
-      "retard_moyen_jours"
+      "hausse"
     ],
     "min_rows": 1
   },
@@ -310,10 +310,7 @@
     "expected_chart_type": "bar",
     "required_columns": [
       "route",
-      "transporteur",
-      "cout_moyen",
-      "cout_total",
-      "retard_moyen_jours"
+      "hausse"
     ],
     "min_rows": 1
   },
@@ -324,10 +321,7 @@
     "expected_chart_type": "bar",
     "required_columns": [
       "produit",
-      "categorie",
-      "quantite_retournee",
-      "retours",
-      "motifs"
+      "taux_retour_pct"
     ],
     "min_rows": 1
   },
@@ -376,7 +370,6 @@
     "required_columns": [
       "produit",
       "ca_dernier_mois",
-      "ca_moyen_commande",
       "ecart"
     ],
     "min_rows": 1
@@ -389,7 +382,6 @@
     "required_columns": [
       "produit",
       "ca_dernier_mois",
-      "ca_moyen_commande",
       "ecart"
     ],
     "min_rows": 1
