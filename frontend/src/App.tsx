@@ -104,7 +104,18 @@ function App() {
     localStorage.setItem('fabriq_dark', darkMode ? '1' : '0')
   }, [darkMode])
 
-  const visibleRows = useMemo(() => result?.rows.slice(0, 12) ?? [], [result])
+  // Pagination du tableau de resultats : on n'ampute plus silencieusement a 12
+  // lignes. Le graphique, lui, exploite toujours l'ensemble des lignes.
+  const TABLE_PAGE_SIZE = 12
+  const [tablePage, setTablePage] = useState(1)
+  useEffect(() => setTablePage(1), [result])
+  const tableTotalPages = result
+    ? Math.max(1, Math.ceil(result.rows.length / TABLE_PAGE_SIZE))
+    : 1
+  const pagedRows = useMemo(
+    () => result?.rows.slice((tablePage - 1) * TABLE_PAGE_SIZE, tablePage * TABLE_PAGE_SIZE) ?? [],
+    [result, tablePage],
+  )
 
   function authHeaders(extra: Record<string, string> = {}): HeadersInit {
     const base: Record<string, string> = { 'Content-Type': 'application/json', ...extra }
@@ -769,7 +780,7 @@ function App() {
                   <BarChart3 size={18} />
                   <h2>{result.chart?.title ?? t.result.chart}</h2>
                 </div>
-                <ResultChart result={result} data={visibleRows} />
+                <ResultChart result={result} data={result.rows} />
               </section>
 
               <section className="table-block">
@@ -777,7 +788,26 @@ function App() {
                   <Table2 size={18} />
                   <h2>{t.result.results}</h2>
                 </div>
-                <ResultTable columns={result.columns} rows={visibleRows} />
+                <ResultTable columns={result.columns} rows={pagedRows} />
+                {tableTotalPages > 1 && (
+                  <div className="audit-pagination">
+                    <button
+                      type="button"
+                      disabled={tablePage <= 1}
+                      onClick={() => setTablePage((p) => p - 1)}
+                    >
+                      ‹
+                    </button>
+                    <span>{tablePage} / {tableTotalPages}</span>
+                    <button
+                      type="button"
+                      disabled={tablePage >= tableTotalPages}
+                      onClick={() => setTablePage((p) => p + 1)}
+                    >
+                      ›
+                    </button>
+                  </div>
+                )}
               </section>
 
               <section className="sql-block">

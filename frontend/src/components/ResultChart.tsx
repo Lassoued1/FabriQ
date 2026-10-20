@@ -1,4 +1,6 @@
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
@@ -47,6 +49,30 @@ export function ResultChart({
               isAnimationActive={false}
             />
           </LineChart>
+        </ResponsiveContainer>
+      </div>
+    )
+  }
+
+  if (result.chart.type === 'area') {
+    return (
+      <div className="chart-frame">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart {...chartProps}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey={result.chart.x} tick={{ fontSize: 12 }} />
+            <YAxis tick={{ fontSize: 12 }} width={48} />
+            <Tooltip />
+            <Area
+              type="monotone"
+              dataKey={result.chart.y}
+              stroke="#1f6feb"
+              fill="#1f6feb"
+              fillOpacity={0.18}
+              strokeWidth={2}
+              isAnimationActive={false}
+            />
+          </AreaChart>
         </ResponsiveContainer>
       </div>
     )
