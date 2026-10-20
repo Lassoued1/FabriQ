@@ -96,6 +96,11 @@ FORBIDDEN_NODES = tuple(
 
 MAX_LIMIT_ROWS = 100
 
+# Seules fonctions "anonymes" (non mappees par sqlglot) tolerees : fonctions de
+# date utilisees par les templates. Toute autre fonction inconnue (pg_sleep,
+# pg_read_file, load_extension, dblink...) est refusee.
+ALLOWED_ANON_FUNCTIONS = {"STRFTIME", "JULIANDAY"}
+
 
 @dataclass(frozen=True)
 class GuardResult:
@@ -139,6 +144,13 @@ def validate_sql(sql: str) -> GuardResult:
         blocked.append("SELECT INTO est bloque.")
     if tree.args.get("locks"):
         blocked.append("Les verrous (FOR UPDATE/SHARE) sont bloques.")
+    # Operations ensemblistes, y compris imbriquees dans une sous-requete.
+    if next(tree.find_all(exp.Union, exp.Intersect, exp.Except), None) is not None:
+        blocked.append("Les operations ensemblistes (UNION/INTERSECT/EXCEPT) sont bloquees.")
+    # SELECT * / t.* interdits : les colonnes doivent etre projetees explicitement
+    # (COUNT(*) reste autorise, l'etoile y est un argument de fonction, pas une projection).
+    if _has_star_projection(tree):
+        blocked.append("SELECT * n'est pas autorise : projeter les colonnes explicitement.")
     if not blocked:
         checks.append("SELECT uniquement.")
 
@@ -154,6 +166,16 @@ def validate_sql(sql: str) -> GuardResult:
         checks.append("Aucun mot-cle d'ecriture ou d'administration.")
 
     # 5. Tables limitees a l'allowlist, y compris sous-requetes et jointures.
+    # Un qualificatif de schema/base (evil.orders, pg_catalog.pg_tables) est
+    # refuse : l'allowlist porte sur le nom nu, il ne doit pas etre contournable
+    # en pointant une table d'un autre schema qui partagerait le meme nom.
+    schema_qualified = sorted(
+        f"{table.db or table.catalog}.{table.name}"
+        for table in tree.find_all(exp.Table)
+        if table.args.get("db") or table.args.get("catalog")
+    )
+    if schema_qualified:
+        blocked.append(f"Tables qualifiees par un schema non autorisees: {', '.join(schema_qualified)}.")
     referenced_tables = {table.name.lower() for table in tree.find_all(exp.Table)}
     forbidden_tables = sorted(referenced_tables - ALLOWED_TABLES)
     if forbidden_tables:
@@ -162,6 +184,17 @@ def validate_sql(sql: str) -> GuardResult:
         checks.append("Tables limitees au catalogue autorise.")
     else:
         blocked.append("Aucune table referencee.")
+
+    # 5b. Fonctions inconnues (non mappees) refusees hors allowlist de dates.
+    bad_functions = sorted({
+        str(func.this).lower()
+        for func in tree.find_all(exp.Anonymous)
+        if str(func.this).upper() not in ALLOWED_ANON_FUNCTIONS
+    })
+    if bad_functions:
+        blocked.append(f"Fonctions non autorisees: {', '.join(bad_functions)}.")
+    else:
+        checks.append("Fonctions limitees aux fonctions analytiques connues.")
 
     # 6. Colonnes limitees a l'allowlist (par table quand la reference est qualifiee).
     forbidden_columns = _forbidden_columns(tree)
@@ -189,6 +222,22 @@ def execute_readonly(connection: sqlite3.Connection, sql: str) -> list[dict[str,
 
     cursor = connection.execute(sql)
     return [dict(row) for row in cursor.fetchall()]
+
+
+def _has_star_projection(tree: exp.Expression) -> bool:
+    """True si un SELECT (racine ou sous-requete) projette '*' ou 'table.*'.
+
+    L'etoile d'un COUNT(*) n'est pas une projection (c'est un argument de
+    fonction) et reste donc autorisee.
+    """
+    for select in tree.find_all(exp.Select):
+        for projection in select.expressions:
+            target = projection.this if isinstance(projection, exp.Alias) else projection
+            if isinstance(target, exp.Star):
+                return True
+            if isinstance(target, exp.Column) and isinstance(target.this, exp.Star):
+                return True
+    return False
 
 
 def _forbidden_columns(tree: exp.Expression) -> list[str]:

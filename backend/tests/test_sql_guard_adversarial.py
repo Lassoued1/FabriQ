@@ -46,6 +46,16 @@ ADVERSARIAL_CASES: tuple[tuple[str, str], ...] = (
         "SELECT id FROM orders WHERE id IN (SELECT hidden_flag FROM products) LIMIT 10"
     )),
     ("column_in_function", "SELECT SUM(salary) FROM customers LIMIT 10"),
+    # Contournements du garde-fou corriges (point 9 de l'audit) :
+    ("nested_union_in_subquery", (
+        "SELECT x FROM (SELECT id AS x FROM orders UNION SELECT id FROM customers) t LIMIT 10"
+    )),
+    ("star_projection", "SELECT * FROM orders LIMIT 10"),
+    ("qualified_star_projection", "SELECT o.* FROM orders o LIMIT 10"),
+    ("schema_qualified_table", "SELECT id FROM evil.orders LIMIT 10"),
+    ("pg_catalog_qualified_table", "SELECT tablename FROM pg_catalog.pg_tables LIMIT 10"),
+    ("time_based_pg_sleep", "SELECT id FROM orders WHERE pg_sleep(5) IS NULL LIMIT 10"),
+    ("sqlite_load_extension", "SELECT load_extension('evil.so') AS a FROM orders LIMIT 10"),
 )
 
 CONTROL_CASES: tuple[tuple[str, str], ...] = (
