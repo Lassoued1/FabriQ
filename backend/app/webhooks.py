@@ -45,6 +45,8 @@ RETRY_DELAYS: tuple[int, ...] = (0, 5, 30)
 HTTP_TIMEOUT_SECONDS = 5
 
 _delivery_lock = threading.Lock()
+# Serialise les sequences lecture-modification-ecriture du fichier d'abonnements.
+_subscriptions_lock = threading.Lock()
 
 
 # ─── Modeles ──────────────────────────────────────────────────────────────────
@@ -105,18 +107,20 @@ def subscriptions_for_tenant(tenant_id: str) -> list[WebhookSubscription]:
 
 
 def add_subscription(subscription: WebhookSubscription) -> WebhookSubscription:
-    subscriptions = load_subscriptions()
-    subscriptions.append(subscription)
-    save_subscriptions(subscriptions)
+    with _subscriptions_lock:
+        subscriptions = load_subscriptions()
+        subscriptions.append(subscription)
+        save_subscriptions(subscriptions)
     return subscription
 
 
 def delete_subscription(subscription_id: str, tenant_id: str) -> bool:
-    subscriptions = load_subscriptions()
-    kept = [s for s in subscriptions if not (s.id == subscription_id and s.tenant_id == tenant_id)]
-    if len(kept) == len(subscriptions):
-        return False
-    save_subscriptions(kept)
+    with _subscriptions_lock:
+        subscriptions = load_subscriptions()
+        kept = [s for s in subscriptions if not (s.id == subscription_id and s.tenant_id == tenant_id)]
+        if len(kept) == len(subscriptions):
+            return False
+        save_subscriptions(kept)
     return True
 
 
@@ -207,16 +211,27 @@ def is_safe_webhook_url(url: str) -> bool:
 
 # ─── Livraison ────────────────────────────────────────────────────────────────
 
+class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Empeche urllib de suivre une redirection : une URL validee ne doit pas
+    pouvoir rediriger (3xx) vers une adresse interne (contournement SSRF)."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: ANN001, D102
+        return None
+
+
+_NO_REDIRECT_OPENER = urllib.request.build_opener(_NoRedirectHandler)
+
+
 def _http_post(url: str, data: bytes, headers: dict[str, str], timeout: int) -> int:
     """POST le corps et retourne le code de statut HTTP.
 
     Isole pour etre monkeypatchee dans les tests. Les statuts d'erreur (4xx/5xx)
-    sont retournes tels quels ; seules les erreurs reseau (URLError, timeout)
-    remontent en exception.
+    et les redirections (3xx, non suivies) sont retournes tels quels ; seules les
+    erreurs reseau (URLError, timeout) remontent en exception.
     """
     req = urllib.request.Request(url, data=data, headers=headers, method="POST")
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
+        with _NO_REDIRECT_OPENER.open(req, timeout=timeout) as resp:  # noqa: S310
             return int(resp.status)
     except urllib.error.HTTPError as exc:
         return int(exc.code)
@@ -255,6 +270,24 @@ def deliver(
 
     S'arrete a la premiere reponse 2xx. Retourne la liste des tentatives.
     """
+    # Re-validation SSRF a la livraison : l'URL a pu etre validee a la creation
+    # mais resoudre vers une IP interne depuis (DNS rebinding, enregistrement
+    # change). Inutile de reessayer une URL refusee : on journalise et on sort.
+    if not is_safe_webhook_url(sub.url):
+        entry = {
+            "webhook_id": sub.id,
+            "event_id": event.id,
+            "event_type": event.type,
+            "tenant_id": sub.tenant_id,
+            "attempt": 1,
+            "delivered_at": datetime.now(UTC).isoformat(),
+            "status_code": None,
+            "ok": False,
+            "error": "URL refusee par le garde anti-SSRF.",
+        }
+        _append_delivery(entry)
+        return [entry]
+
     attempts: list[dict] = []
     for index, delay in enumerate(delays, start=1):
         if delay:

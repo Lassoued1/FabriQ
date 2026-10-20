@@ -24,7 +24,7 @@ from app.webhooks import (
 )
 
 
-def _sub(tenant="tenant_demo", events=("question.answered",), enabled=True, url="https://hooks.example/x"):
+def _sub(tenant="tenant_demo", events=("question.answered",), enabled=True, url="https://93.184.216.34/x"):
     return WebhookSubscription(
         tenant_id=tenant,
         name="test",
@@ -72,6 +72,21 @@ class PersistenceTests(WebhookTestBase):
         self.assertFalse(delete_subscription(created.id, "tenant_demo"))
         self.assertTrue(delete_subscription(created.id, "tenant_acme"))
         self.assertEqual(subscriptions_for_tenant("tenant_acme"), [])
+
+
+class ConcurrencyTests(WebhookTestBase):
+    def test_concurrent_adds_lose_no_subscription(self) -> None:
+        import threading
+
+        def worker() -> None:
+            add_subscription(_sub(events=("question.answered",)))
+
+        threads = [threading.Thread(target=worker) for _ in range(25)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        self.assertEqual(len(subscriptions_for_tenant("tenant_demo")), 25)
 
 
 class SignatureTests(WebhookTestBase):
@@ -165,24 +180,37 @@ class DeliveryTests(WebhookTestBase):
         self.assertEqual(captured["headers"]["X-FabriQ-Signature"], expected)
         self.assertEqual(captured["headers"]["X-FabriQ-Event"], "ping")
 
+    def test_internal_url_refused_at_delivery_without_posting(self) -> None:
+        """Re-validation SSRF a la livraison : une URL interne n'est jamais postee,
+        meme si la souscription existe deja (DNS rebinding / enregistrement change)."""
+        def must_not_run(*a, **k):
+            raise AssertionError("_http_post ne doit pas etre appele pour une URL interne")
+
+        webhooks._http_post = must_not_run
+        sub = _sub(url="http://127.0.0.1:8000/hook")
+        attempts = deliver(sub, webhooks.WebhookEvent(type="ping", tenant_id=sub.tenant_id, data={}))
+        self.assertEqual(len(attempts), 1)
+        self.assertFalse(attempts[0]["ok"])
+        self.assertIn("SSRF", attempts[0]["error"])
+
 
 class EmitTests(WebhookTestBase):
     def test_emit_delivers_only_to_enabled_subscribed(self) -> None:
         posted: list[str] = []
         webhooks._http_post = lambda url, *a, **k: posted.append(url) or 200
 
-        add_subscription(_sub(events=("question.answered",), url="https://hooks.example/yes"))
-        add_subscription(_sub(events=("alert.fired",), url="https://hooks.example/othertype"))
-        add_subscription(_sub(events=("question.answered",), enabled=False, url="https://hooks.example/disabled"))
+        add_subscription(_sub(events=("question.answered",), url="https://93.184.216.34/yes"))
+        add_subscription(_sub(events=("alert.fired",), url="https://93.184.216.34/othertype"))
+        add_subscription(_sub(events=("question.answered",), enabled=False, url="https://93.184.216.34/disabled"))
 
         emit("question.answered", "tenant_demo", {"intent": "revenue_trend"}, sync=True)
 
-        self.assertEqual(posted, ["https://hooks.example/yes"])
+        self.assertEqual(posted, ["https://93.184.216.34/yes"])
 
     def test_emit_is_tenant_scoped(self) -> None:
         posted: list[str] = []
         webhooks._http_post = lambda url, *a, **k: posted.append(url) or 200
-        add_subscription(_sub(tenant="tenant_acme", url="https://hooks.example/acme"))
+        add_subscription(_sub(tenant="tenant_acme", url="https://93.184.216.34/acme"))
 
         emit("question.answered", "tenant_demo", {}, sync=True)
 
@@ -275,6 +303,31 @@ class EndpointTests(WebhookTestBase):
         self.user.tenant_id = "tenant_acme"
         self.assertEqual(self.client.get("/api/webhooks").json()["webhooks"], [])
         self.assertEqual(self.client.delete(f"/api/webhooks/{hook_id}").status_code, 404)
+
+
+class AlertNotificationSsrfTests(unittest.TestCase):
+    """Les notifications par-alerte (webhook/Slack) passaient outre le garde
+    anti-SSRF : elles doivent desormais refuser les URLs internes."""
+
+    def test_fire_webhook_and_slack_skip_internal_urls(self) -> None:
+        from app import alerts
+
+        event = alerts.AlertEvent(
+            rule_id="r", rule_name="n", fired_at="t",
+            tenant_id="tenant_demo", triggered_value=1.0, rows_snapshot=[],
+        )
+        original = alerts.urllib.request.urlopen
+
+        def must_not_run(*a, **k):
+            raise AssertionError("aucun POST ne doit partir vers une URL interne")
+
+        alerts.urllib.request.urlopen = must_not_run
+        try:
+            # loopback et endpoint de metadonnees cloud (link-local) : refuses
+            alerts.fire_webhook("http://127.0.0.1/hook", event)
+            alerts.fire_slack("http://169.254.169.254/latest/meta-data", event)
+        finally:
+            alerts.urllib.request.urlopen = original
 
 
 if __name__ == "__main__":

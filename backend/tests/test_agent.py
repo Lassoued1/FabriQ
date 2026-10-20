@@ -869,5 +869,34 @@ class AlertAndTenantFixTests(unittest.TestCase):
         self.assertAlmostEqual(total_share, 100.0, delta=0.5)
 
 
+class AlertRulesConcurrencyTests(unittest.TestCase):
+    def test_concurrent_add_rule_loses_no_rule(self) -> None:
+        import tempfile
+        import threading
+        from pathlib import Path as _Path
+
+        from app import alerts
+
+        tmp = tempfile.TemporaryDirectory()
+        original = alerts.RULES_FILE
+        alerts.RULES_FILE = _Path(tmp.name) / "rules.json"
+        try:
+            def worker() -> None:
+                alerts.add_rule(alerts.AlertRule(
+                    name="r", intent_id="margin_trend", threshold_column="variation_pts",
+                    threshold_value=0.0, operator="lt", tenant_id="tenant_demo",
+                ))
+
+            threads = [threading.Thread(target=worker) for _ in range(25)]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+            self.assertEqual(len(alerts.load_rules()), 25)
+        finally:
+            alerts.RULES_FILE = original
+            tmp.cleanup()
+
+
 if __name__ == "__main__":
     unittest.main()

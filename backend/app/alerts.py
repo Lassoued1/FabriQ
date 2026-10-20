@@ -4,6 +4,7 @@ import json
 import operator
 import os
 import smtplib
+import threading
 import urllib.request
 from datetime import UTC, datetime
 from email.mime.text import MIMEText
@@ -15,11 +16,15 @@ from pydantic import BaseModel, Field
 
 from .database import ReadonlyDatabase
 from .semantic_layer import QueryParameters, intent_by_id, render_intent_sql
-from .webhooks import emit
+from .webhooks import emit, is_safe_webhook_url
 
 ALERTS_DIR = Path(__file__).resolve().parents[1] / "alerts"
 RULES_FILE = ALERTS_DIR / "rules.json"
 EVENTS_FILE = Path(__file__).resolve().parents[1] / "logs" / "alerts.jsonl"
+
+# Serialise les sequences lecture-modification-ecriture du fichier de regles
+# (le scheduler et les requetes API s'executent dans des threads differents).
+_rules_lock = threading.RLock()
 
 _OPERATORS: dict[str, object] = {
     "gt": operator.gt,
@@ -148,18 +153,20 @@ def rules_for_tenant(tenant_id: str) -> list[AlertRule]:
 
 
 def add_rule(rule: AlertRule) -> AlertRule:
-    rules = load_rules()
-    rules.append(rule)
-    save_rules(rules)
+    with _rules_lock:
+        rules = load_rules()
+        rules.append(rule)
+        save_rules(rules)
     return rule
 
 
 def delete_rule(rule_id: str, tenant_id: str) -> bool:
-    rules = load_rules()
-    new_rules = [r for r in rules if not (r.id == rule_id and r.tenant_id == tenant_id)]
-    if len(new_rules) == len(rules):
-        return False
-    save_rules(new_rules)
+    with _rules_lock:
+        rules = load_rules()
+        new_rules = [r for r in rules if not (r.id == rule_id and r.tenant_id == tenant_id)]
+        if len(new_rules) == len(rules):
+            return False
+        save_rules(new_rules)
     return True
 
 
@@ -204,7 +211,7 @@ def evaluate_rule(rule: AlertRule, database: ReadonlyDatabase) -> AlertEvent | N
 
 def fire_slack(slack_url: str, event: AlertEvent) -> None:
     """Post a Slack message via Incoming Webhook. Best-effort — errors are silenced."""
-    if not slack_url:
+    if not slack_url or not is_safe_webhook_url(slack_url):
         return
     text = (
         f":warning: *Alerte FabriQ* — {event.rule_name}\n"
@@ -226,6 +233,8 @@ def fire_slack(slack_url: str, event: AlertEvent) -> None:
 
 def fire_webhook(url: str, event: AlertEvent) -> None:
     """Best-effort POST of the alert event payload to a webhook URL."""
+    if not url or not is_safe_webhook_url(url):
+        return
     payload = json.dumps(event.model_dump(), ensure_ascii=True).encode()
     req = urllib.request.Request(
         url,
