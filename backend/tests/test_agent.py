@@ -231,7 +231,7 @@ class AgentTest(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(payload["status"], "ok")
-        self.assertEqual(payload["version"], "0.17.0")
+        self.assertEqual(payload["version"], "0.18.0")
         self.assertIn("llm_status", payload)
         self.assertIn("llm_reachable", payload)
         self.assertIn("llm_model_available", payload)
@@ -288,6 +288,29 @@ class V4Test(unittest.TestCase):
         sql = "SELECT o.id FROM orders o GROUP BY o.id LIMIT 5"
         result = inject_tenant_filter(sql, "x")
         self.assertIn("o.tenant_id", result)
+
+    def test_inject_targets_from_rooted_tenant_table(self) -> None:
+        # Table tenant-scoppee dans le FROM (pas seulement un JOIN) : doit etre filtree.
+        sql = (
+            "SELECT p.reference FROM orders o JOIN products p ON p.id = o.product_id "
+            "GROUP BY p.reference LIMIT 10"
+        )
+        result = inject_tenant_filter(sql, "tenant_demo")
+        self.assertIn("tenant_demo", result)
+        self.assertIn("o.tenant_id", result)
+
+    def test_inject_ignores_tenant_table_only_in_subquery(self) -> None:
+        # 'orders' n'apparait que dans une sous-requete correlee ; la requete
+        # externe (returns/products) n'a pas de colonne tenant_id -> aucune
+        # injection, et surtout aucune alteration de la sous-requete.
+        sql = (
+            "SELECT p.reference, "
+            "(SELECT SUM(o.quantity) FROM orders o WHERE o.product_id = p.id) AS vendu "
+            "FROM returns r JOIN products p ON p.id = r.product_id "
+            "GROUP BY p.reference LIMIT 10"
+        )
+        result = inject_tenant_filter(sql, "tenant_demo")
+        self.assertNotIn("tenant_id", result)
 
     def test_postgres_templates_with_tenant_pass_guard(self) -> None:
         """Injected tenant SQL must still pass the SQL guard."""
@@ -867,6 +890,58 @@ class AlertAndTenantFixTests(unittest.TestCase):
         rows = db.execute_readonly(sql)
         total_share = sum(r["part_ca"] for r in rows)
         self.assertAlmostEqual(total_share, 100.0, delta=0.5)
+
+
+class AdminTenantScopeTests(unittest.TestCase):
+    """L'admin gere son propre tenant, pas la plateforme entiere."""
+
+    @staticmethod
+    def _roster() -> list:
+        return [
+            UserContext(user_id="1", email="a@test.io", tenant_id="tenant_test", role="user"),
+            UserContext(user_id="2", email="b@other.io", tenant_id="tenant_acme", role="user"),
+        ]
+
+    def _client(self):
+        from fastapi.testclient import TestClient
+        from app.main import app
+        return TestClient(app), app
+
+    def test_list_scoped_to_own_tenant(self) -> None:
+        client, app = self._client()
+        app.dependency_overrides[get_current_user] = _test_user  # admin tenant_test
+        try:
+            with patch("app.main.list_users", return_value=self._roster()), \
+                 patch("app.main.list_disabled", return_value=[]):
+                resp = client.get("/api/admin/users")
+        finally:
+            app.dependency_overrides.pop(get_current_user, None)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual({u["email"] for u in resp.json()["users"]}, {"a@test.io"})
+
+    def test_cannot_disable_user_of_other_tenant(self) -> None:
+        client, app = self._client()
+        app.dependency_overrides[get_current_user] = _test_user
+        try:
+            with patch("app.main.list_users", return_value=self._roster()), \
+                 patch("app.main.disable_user") as disabler:
+                resp = client.post("/api/admin/users/b@other.io/disable")
+        finally:
+            app.dependency_overrides.pop(get_current_user, None)
+        self.assertEqual(resp.status_code, 404)
+        disabler.assert_not_called()
+
+    def test_can_disable_user_of_own_tenant(self) -> None:
+        client, app = self._client()
+        app.dependency_overrides[get_current_user] = _test_user
+        try:
+            with patch("app.main.list_users", return_value=self._roster()), \
+                 patch("app.main.disable_user") as disabler:
+                resp = client.post("/api/admin/users/a@test.io/disable")
+        finally:
+            app.dependency_overrides.pop(get_current_user, None)
+        self.assertEqual(resp.status_code, 200)
+        disabler.assert_called_once_with("a@test.io")
 
 
 class AlertRulesConcurrencyTests(unittest.TestCase):

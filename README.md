@@ -7,9 +7,9 @@
 
 FabriQ is an analytics assistant for industrial SMEs: ask a question in natural language, get a safe SQL query, executed read-only, then a readable answer with table, chart, visible SQL, and an operational explanation.
 
-**Current version: v0.17.0** — natural-language questions in French, German and English driving parameterized queries across 14 business families, an AST-based SQL guardrail (table and column allowlists) backed by a read-only database role, multi-user, multi-tenant, optional OIDC SSO (Keycloak) covered end-to-end in CI, LangGraph orchestration, scheduled alerts, generic outgoing webhooks (HMAC-signed, SSRF-guarded), a trilingual FR/EN/DE interface (login page included, language persisted), Prometheus/Grafana observability, CI and E2E tests.
+**Current version: v0.18.0** — natural-language questions in French, German and English driving parameterized queries across 14 business families, an AST-based SQL guardrail (table and column allowlists) backed by a read-only database role, multi-user, multi-tenant, optional OIDC SSO (Keycloak) covered end-to-end in CI, LangGraph orchestration, scheduled alerts, generic outgoing webhooks (HMAC-signed, SSRF-guarded), a trilingual FR/EN/DE interface (login page included, language persisted), Prometheus/Grafana observability, CI and E2E tests.
 
-![FabriQ demo](docs/assets/fabriq-v0.15.0-demo.gif)
+![FabriQ demo](docs/assets/fabriq-v0.17.0-demo.gif)
 
 ## Problem
 
@@ -47,7 +47,7 @@ Correctness is measured against a purpose-built harness — **four suites, 95 ca
 
 Each report records, per case: the generated SQL, the detected intent, the row count, and the selected chart type — so a failure shows *why*, not just that it failed.
 
-**Adversarial suite:** 31 injection attempts (stacked statements, `UNION` exfiltration, CTE smuggling, comment obfuscation, unlisted tables and columns, non-literal `LIMIT`, write statements) — all 31 blocked, with 5 control queries confirming legitimate SQL still passes.
+**Adversarial suite:** 38 injection attempts (stacked statements, top-level and **nested** `UNION` exfiltration, CTE smuggling, comment obfuscation, unlisted tables and columns, **schema-qualified tables**, **`SELECT *`**, **unknown functions** like `pg_sleep`/`load_extension`, non-literal `LIMIT`, write statements) — all 38 blocked, with 5 control queries confirming legitimate SQL still passes.
 
 **Tests:** 130 backend tests (pytest), frontend unit tests (Vitest), and Playwright E2E suites (auth, analysis, observability, and a full SSO journey against a committed OIDC stub that really verifies PKCE). CI runs backend (pytest + ruff), frontend (tsc + build), a Docker smoke test, and E2E on every push. Load testing with Locust.
 
@@ -103,6 +103,7 @@ SSO stays disabled until `FABRIQ_OIDC_ISSUER` and `FABRIQ_OIDC_CLIENT_ID` are se
 - No PDF ingestion or document RAG, no fine-tuning.
 - Ollama remains optional and local; the default behaviour is fully deterministic and works without any LLM.
 - Questions are answered from a curated set of 14 intent families with verified SQL templates — FabriQ does not synthesise arbitrary SQL, so a question outside those families returns a clarification rather than a guess. That is a deliberate trade-off: bounded coverage in exchange for queries that cannot be wrong by construction.
+- Tenant isolation currently scopes the sales-facing tables that carry a `tenant_id` (`orders`, `customers`): the server adds the tenant filter to the outer query through an AST parser (never the client payload), and it also keys the result cache. The remaining demo tables (`shipments`, `returns`, `costs`, `production_batches`, `supplier_delays`, `inventory_movements`) are shared demo data — full isolation would mean adding `tenant_id` to them and to the seed. This is a deliberate, documented scope for the demo.
 - SSO claim mapping is static in the demo realm (`fabriq_tenant` / `fabriq_role` are hardcoded mappers); a real deployment would map them from user attributes or groups.
 - The SSO flow is covered end-to-end in CI against a committed OIDC stub, but the Keycloak container itself has not yet been exercised on the current development machine.
 - Users are declared via environment variables by default; OIDC SSO is additive and opt-in, not a replacement.
@@ -140,7 +141,7 @@ A blocklist of keywords is trivially defeated by comments, casing or nesting. `s
 | Column allowlist, per table, with alias resolution | `o.password`, and even `o.reference` — a real column, but not on `orders` |
 | `LIMIT` present, literal, and bounded | `LIMIT (SELECT ...)`, unbounded scans |
 
-A textual scan is kept as defence in depth, then `EXPLAIN` (or `EXPLAIN QUERY PLAN` on SQLite) runs as a preflight, and execution is capped by `FABRIQ_QUERY_TIMEOUT_SECONDS`. Underneath it all, the PostgreSQL role `fabriq_readonly` simply has no write grant — so even a hypothetical guardrail bypass cannot mutate data. The 24-case adversarial suite pins this behaviour.
+A textual scan is kept as defence in depth, then `EXPLAIN` (or `EXPLAIN QUERY PLAN` on SQLite) runs as a preflight, and execution is capped by `FABRIQ_QUERY_TIMEOUT_SECONDS`. Underneath it all, the PostgreSQL role `fabriq_readonly` simply has no write grant — so even a hypothetical guardrail bypass cannot mutate data. The 38-case adversarial suite pins this behaviour.
 
 ### Multi-tenancy
 

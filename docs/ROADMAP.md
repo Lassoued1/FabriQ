@@ -4,7 +4,7 @@ FabriQ est un assistant d'analyse pour PME industrielles: une question en langag
 
 ## Etat actuel
 
-Version stabilisee: `FabriQ v0.17.0` (taguee le 8 aout 2026).
+Version stabilisee: `FabriQ v0.18.0` (taguee le 28 octobre 2026).
 
 | Jalon | Etat | Commentaire |
 | --- | --- | --- |
@@ -29,6 +29,7 @@ Version stabilisee: `FabriQ v0.17.0` (taguee le 8 aout 2026).
 | Jalon 18 - V15 login trilingue et langue persistee v0.15.0 | Termine | Page de login traduite FR/EN/DE, choix de langue persiste dans localStorage. |
 | Jalon 19 - V16 perimetre metier elargi v0.16.0 | Termine | E2E du parcours SSO en CI, 3 nouvelles familles (13 au total), allowlist de colonnes (L4), 130 tests. |
 | Jalon 20 - V17 structure de couts v0.17.0 | Termine | Famille "structure de couts" (14 au total), seed `costs` ventile en 5 postes, table `costs` au catalogue, evaluation 99 cas. |
+| Jalon 21 - V18 durcissement (audit externe) v0.18.0 | Termine | Calculs metier corriges + eval numerique, garde-fou durci (38 cas adversariaux), SSRF webhooks, persistance, scope admin par tenant, filtre tenant AST, 143 tests. |
 
 ## Objectif MVP
 
@@ -348,9 +349,38 @@ Version livree: `v0.17.0`.
 - Evaluation : golden 51, allemand 19, anglais 19, paraphrases 10 (99 cas). Le
   garde-fou couvrait deja `costs` : le 14e template passe sans modification.
 
+## Jalon 21 - V18 durcissement (audit externe) v0.18.0
+
+Version livree: `v0.18.0`. Corrections issues d'un audit externe du code.
+
+- Calculs metier corriges : taux de retour reel (retours / ventes), marge en
+  declin (comparaison recente vs anterieure par produit), hausse de cout par
+  periode (logistique), anomalie a unite coherente (CA mensuel vs CA mensuel
+  moyen). Mecanisme `mid_date` (milieu de fenetre recalcule) pour les
+  comparaisons de periodes.
+- Evaluation : le harnais compare desormais les **valeurs numeriques** des
+  lignes (`expected_first_row`/`expected_rows`), pas seulement la structure —
+  c'est ce qui aurait attrape les calculs faux ci-dessus.
+- Garde-fou SQL durci : refus de l'UNION imbrique, de `SELECT *`, des tables
+  qualifiees par un schema et des fonctions inconnues (`pg_sleep`,
+  `load_extension`...). Suite adversariale portee a 38 cas.
+- Webhooks : garde anti-SSRF revalide a la livraison, redirections non suivies,
+  et applique aussi aux URLs par-alerte (webhook/Slack) qui le contournaient.
+- Persistance : volumes Docker pour les abonnements webhooks et les comptes
+  desactives ; verrous sur les ecritures JSON concurrentes (regles, abonnements).
+- Administration : perimetre limite au tenant de l'administrateur ; utilisateurs
+  SSO documentes comme geres par le fournisseur d'identite.
+- Isolation tenant : l'injecteur de filtre passe d'un patch regex a une
+  reecriture AST (sqlglot) portant sur la seule requete externe ; perimetre
+  (orders/customers) documente dans le README.
+- Correctifs annexes : creation d'alerte (plus de 422), colonnes d'alerte
+  alignees sur la sortie SQL, mot de passe Docker coherent, pagination du
+  tableau de resultats, rendu des graphes `area`. 143 tests backend.
+
 ## Horizon suivant
 
-Prochaine version possible: `v0.18.0`.
+Prochaine version possible: `v0.19.0`.
 
 - Demo en ligne optionnelle.
 - Mapping SSO par attributs utilisateur / groupes Keycloak (les mappers de demo utilisent des claims fixes).
+- Isolation tenant complete : ajouter `tenant_id` aux tables metier restantes (shipments, returns, costs, production_batches, supplier_delays, inventory_movements) et au seed.

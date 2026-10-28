@@ -2,6 +2,45 @@
 
 Historique des versions de FabriQ. Le detail complet de chaque jalon est dans [docs/ROADMAP.md](docs/ROADMAP.md).
 
+## v0.18.0 — 28 octobre 2026
+
+Durcissement issu d'un audit externe du code. Correctifs de fiabilite, de
+securite et de justesse metier ; aucune regression (143 tests backend, 99 cas
+d'evaluation, 15 tests unitaires frontend).
+
+- **Calculs metier corriges.** Le « taux de retour » rapporte desormais les
+  retours aux quantites vendues (vrai taux, plus un simple volume) ; la « marge
+  en baisse » compare periode recente et anterieure par produit et classe les
+  baisses ; les « routes plus cheres » comparent deux periodes ; les
+  « anomalies » comparent le CA du dernier mois au CA mensuel moyen (meme unite).
+  Nouveau mecanisme de date de coupure (`mid_date`) recalcule selon la fenetre.
+- **Evaluation par valeurs.** Le harnais verifie maintenant les valeurs
+  numeriques des lignes attendues, pas seulement les colonnes / le nombre de
+  lignes / le type de graphe — ce qui empechait de detecter les calculs faux.
+- **Garde-fou SQL durci.** Refus de l'UNION imbrique, de `SELECT *`, des tables
+  qualifiees par un schema (`autre.orders`) et des fonctions inconnues
+  (`pg_sleep`, `load_extension`...). Suite adversariale : 31 -> **38 cas**.
+- **SSRF webhooks coherent.** Revalidation de l'URL a la livraison (anti DNS
+  rebinding), redirections non suivies, et meme garde applique aux URLs
+  webhook/Slack par-alerte qui le contournaient.
+- **Persistance.** Volumes Docker ajoutes pour les abonnements webhooks et les
+  comptes desactives (perdus auparavant au recreate du conteneur) ; verrous sur
+  les ecritures JSON concurrentes (regles d'alerte, abonnements).
+- **Scope d'administration.** Les endpoints admin sont limites au tenant de
+  l'appelant ; les utilisateurs SSO sont documentes comme geres par le
+  fournisseur d'identite (leur desactivation par email s'applique neanmoins au
+  login).
+- **Isolation tenant par AST.** Le filtre `tenant_id` passe d'un patch par
+  expressions regulieres a une reecriture sqlglot portant sur la seule requete
+  externe (jamais les sous-requetes) ; le perimetre (tables `orders`/`customers`)
+  est documente dans le README.
+- **Correctifs UX / config.** Creation d'alerte fonctionnelle (le front
+  n'envoyait pas `tenant_id` -> 422) et colonnes de seuil alignees sur la sortie
+  SQL ; mot de passe read-only Docker coherent entre `.env.example` et le seed ;
+  tableau de resultats pagine (au lieu d'une troncature a 12 lignes) ; graphes
+  `area` rendus correctement.
+- Nouveau GIF de demonstration (`docs/assets/fabriq-v0.17.0-demo.gif`).
+
 ## v0.17.0 — 8 aout 2026
 
 - **Nouvelle famille de questions : structure de couts (14 au total)**. Ventile

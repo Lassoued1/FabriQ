@@ -70,7 +70,7 @@ _TAGS_METADATA = [
 
 app = FastAPI(
     title="FabriQ API",
-    version="0.17.0",
+    version="0.18.0",
     description=(
         "FabriQ est un assistant d'analyse industrielle NL→SQL. "
         "Une question en français, une requête SQL sécurisée, "
@@ -317,21 +317,34 @@ def audit_export_xlsx(current_user: CurrentUser) -> Response:
 
 # ─── Admin endpoints ──────────────────────────────────────────────────────────
 
-@app.get("/api/admin/users", tags=["admin"], summary="Lister tous les utilisateurs avec leur statut (admin)")
+# Perimetre d'administration : un administrateur gere SON tenant, pas la
+# plateforme entiere. La liste et les actions de (de)sactivation sont donc
+# limitees aux utilisateurs locaux (FABRIQ_USERS) du tenant de l'appelant, pour
+# rester coherent avec l'isolation multi-tenant du reste de l'API.
+# Les utilisateurs SSO (OIDC) ne figurent pas dans le referentiel local : leur
+# cycle de vie est gere dans le fournisseur d'identite (Keycloak). La liste des
+# comptes desactives s'applique neanmoins a leur email a la connexion (login
+# local et callback OIDC), donc un email desactive reste bloque quelle que soit
+# la source.
+def _tenant_user_emails(tenant_id: str) -> set[str]:
+    return {u.email for u in list_users() if u.tenant_id == tenant_id}
+
+
+@app.get("/api/admin/users", tags=["admin"], summary="Lister les utilisateurs locaux de son tenant avec leur statut (admin)")
 def admin_list_users(current_user: AdminUser) -> dict[str, list]:
     disabled = set(list_disabled())
     return {
         "users": [
             {"email": u.email, "tenant_id": u.tenant_id, "role": u.role, "disabled": u.email in disabled}
             for u in list_users()
+            if u.tenant_id == current_user.tenant_id
         ]
     }
 
 
-@app.post("/api/admin/users/{email}/disable", tags=["admin"], summary="Désactiver un compte utilisateur", responses={404: {"description": "Utilisateur introuvable."}, 400: {"description": "Auto-désactivation interdite."}})
+@app.post("/api/admin/users/{email}/disable", tags=["admin"], summary="Désactiver un compte utilisateur de son tenant", responses={404: {"description": "Utilisateur introuvable dans le tenant."}, 400: {"description": "Auto-désactivation interdite."}})
 def admin_disable_user(email: str, current_user: AdminUser) -> dict[str, object]:
-    all_emails = {u.email for u in list_users()}
-    if email not in all_emails:
+    if email not in _tenant_user_emails(current_user.tenant_id):
         raise HTTPException(status_code=404, detail="Utilisateur introuvable.")
     if email == current_user.email:
         raise HTTPException(status_code=400, detail="Impossible de se désactiver soi-même.")
@@ -339,10 +352,9 @@ def admin_disable_user(email: str, current_user: AdminUser) -> dict[str, object]
     return {"email": email, "disabled": True}
 
 
-@app.post("/api/admin/users/{email}/enable", tags=["admin"], summary="Réactiver un compte utilisateur", responses={404: {"description": "Utilisateur introuvable."}})
+@app.post("/api/admin/users/{email}/enable", tags=["admin"], summary="Réactiver un compte utilisateur de son tenant", responses={404: {"description": "Utilisateur introuvable dans le tenant."}})
 def admin_enable_user(email: str, current_user: AdminUser) -> dict[str, object]:
-    all_emails = {u.email for u in list_users()}
-    if email not in all_emails:
+    if email not in _tenant_user_emails(current_user.tenant_id):
         raise HTTPException(status_code=404, detail="Utilisateur introuvable.")
     enable_user(email)
     return {"email": email, "disabled": False}

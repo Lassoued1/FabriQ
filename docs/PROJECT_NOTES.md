@@ -4,7 +4,7 @@ Document de reprise (handoff). Résume l'état courant, comment lancer, et les p
 
 ## État courant
 
-- **Version** : v0.17.0 taguée/publiée le 8 août 2026 (famille structure de coûts, seed `costs` ventilé en 5 postes, 14 familles de questions) — dépôt public https://github.com/Lassoued1/FabriQ
+- **Version** : v0.18.0 (28 octobre 2026) — durcissement issu d'un audit externe : calculs métier corrigés (taux de retour réel, marge en déclin, hausse de coût par période, anomalie à unité cohérente), éval vérifiant désormais les valeurs numériques, garde-fou SQL durci (UNION imbriqué, `SELECT *`, schéma qualifié, fonctions inconnues), SSRF webhooks cohérent, persistance webhooks/users, scope admin par tenant, filtre tenant basé sur AST. v0.17.0 (8 août 2026) : famille structure de coûts. Dépôt public https://github.com/Lassoued1/FabriQ
 - **CI** : GitHub Actions verte (backend, frontend, E2E Playwright, Docker). Le job backend exécute toute la suite `tests`. La CI a été rouge du 15 au 18 juillet : `WebhooksPanel` réutilisait la classe CSS `alerts-panel`, ce qui faisait échouer le sélecteur strict Playwright (voir piège 9).
 - **Tests** : 130 backend (pytest) + 280 sous-tests, 15 unitaires frontend (Vitest), 12 E2E (Playwright, dont 2 SSO contre le stub OIDC), 4 suites d'évaluation (golden 49, paraphrases 10, allemand 18, anglais 18 — 95 cas).
 

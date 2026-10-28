@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import operator
-import re
 from types import SimpleNamespace
 from typing import Annotated, Any
 
+import sqlglot
 from langgraph.graph import END, START, StateGraph
+from sqlglot import exp
 from typing_extensions import TypedDict
 
 from .cache import sql_result_cache
@@ -402,37 +403,67 @@ def build_graph(llm_classifier: Any = None) -> Any:
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
+# Tables qui portent une colonne tenant_id (schema PostgreSQL). Le perimetre
+# d'isolation multi-tenant se limite a ces tables : les autres jeux metier
+# (shipments, returns, costs, production_batches, supplier_delays,
+# inventory_movements) sont des donnees de demonstration partagees — une vraie
+# isolation complete demanderait d'ajouter tenant_id a ces tables et au seed.
+# Cette limite est documentee dans le README (section "Explicit limitations").
 _TENANT_TABLES = frozenset({"orders", "customers"})
+
+# Ordre de preference du qualificatif quand plusieurs tables scoppees coexistent.
+_TENANT_PREFERENCE = ("orders", "customers")
+
+
+def _root_sources(tree: exp.Select) -> list[exp.Expression]:
+    """Sources (tables/sous-requetes) du FROM/JOIN du SELECT racine uniquement.
+
+    On ne descend jamais dans les sous-requetes : le filtre tenant ne doit
+    porter que sur la requete externe, pas sur une sous-requete correlee.
+    """
+    sources: list[exp.Expression] = []
+    from_node = tree.args.get("from_") or tree.args.get("from")
+    if from_node is not None:
+        sources.append(from_node.this)
+        sources.extend(getattr(from_node, "expressions", None) or [])
+    for join in tree.args.get("joins") or []:
+        sources.append(join.this)
+    return sources
+
+
+def _root_tenant_alias(tree: exp.Select) -> str | None:
+    """Alias (ou nom) de la table tenant-scoppee du SELECT racine, ou None."""
+    found: dict[str, str] = {}
+    for node in _root_sources(tree):
+        if isinstance(node, exp.Table) and node.name.lower() in _TENANT_TABLES:
+            found.setdefault(node.name.lower(), node.alias or node.name)
+    for preferred in _TENANT_PREFERENCE:
+        if preferred in found:
+            return found[preferred]
+    return None
 
 
 def inject_tenant_filter(sql: str, tenant_id: str) -> str:
-    """Inject a tenant_id WHERE/AND clause for queries referencing tenant-scoped tables.
+    """Ajoute `tenant_id = <jwt>` a la requete externe via un parseur AST.
 
-    Only called for authenticated Postgres sessions — SQLite tests are unaffected.
-    The tenant_id value comes from a signed JWT, never from user input.
+    Appele uniquement pour les sessions authentifiees (PostgreSQL). Le filtre
+    est ajoute (AND) a la clause WHERE du SELECT racine, qualifie par l'alias de
+    la table tenant-scoppee ; les sous-requetes ne sont jamais modifiees. Si la
+    requete racine ne reference aucune table tenant-scoppee, le SQL est renvoye
+    inchange. Le tenant_id provient d'un JWT signe, jamais d'une saisie client,
+    et est insere comme litteral via l'AST (pas de concatenation de chaine).
     """
-    lower = sql.lower()
-    if not any(re.search(rf"\b{t}\b", lower) for t in _TENANT_TABLES):
+    try:
+        tree = sqlglot.parse_one(sql, dialect="postgres")
+    except Exception:
         return sql
-
-    # Detect alias for 'orders' (e.g. "FROM orders o" → "o")
-    alias_match = re.search(r"\borders\s+(?:as\s+)?([a-z_]\w*)", lower)
-    if alias_match and alias_match.group(1) not in ("join", "inner", "left", "right", "on"):
-        qualifier = f"{alias_match.group(1)}.tenant_id"
-    else:
-        qualifier = "orders.tenant_id"
-
-    tenant_clause = f"{qualifier} = '{tenant_id}'"
-
-    where_match = re.search(r"\bWHERE\b", sql, re.IGNORECASE)
-    split_match = re.search(r"\b(GROUP BY|ORDER BY|LIMIT)\b", sql, re.IGNORECASE)
-
-    if where_match:
-        pos = split_match.start() if split_match else len(sql)
-        return sql[:pos] + f"AND {tenant_clause}\n" + sql[pos:]
-    else:
-        pos = split_match.start() if split_match else len(sql)
-        return sql[:pos] + f"WHERE {tenant_clause}\n" + sql[pos:]
+    if not isinstance(tree, exp.Select):
+        return sql
+    alias = _root_tenant_alias(tree)
+    if alias is None:
+        return sql
+    predicate = exp.column("tenant_id", table=alias).eq(exp.Literal.string(tenant_id))
+    return tree.where(predicate, append=True).sql(dialect="postgres")
 
 
 _TIME_COLUMN_HINTS = frozenset({
